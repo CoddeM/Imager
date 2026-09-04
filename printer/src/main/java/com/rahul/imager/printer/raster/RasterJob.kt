@@ -84,4 +84,18 @@ enum class RasterWarning {
 
     /** The print is long enough to be worth warning about before the user commits paper to it. */
     VERY_LONG_PRINT,
+
+    /**
+     * The photo could only be decoded by shrinking it further than asked for.
+     *
+     * The print still happens — always preferable to refusing the photo — but it is softer than it
+     * would otherwise have been, and the user deserves to know why.
+     */
+    DECODED_AT_LOWER_QUALITY,
+
+    /**
+     * The photo was so tall relative to the paper that it had to be narrowed to stay within the
+     * maximum print length. Better a smaller print than no print.
+     */
+    SHRUNK_TO_FIT_PAPER,
 }

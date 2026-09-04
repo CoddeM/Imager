@@ -2,22 +2,18 @@ package com.rahul.imager.printer.raster
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.util.Log
 import com.rahul.imager.printer.domain.PaperProfile
 import com.rahul.imager.printer.domain.PrintCategory
 import com.rahul.imager.printer.domain.PrintError
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
@@ -59,23 +55,34 @@ class RasterPipeline(
             )
         }
 
-        val decoded = try {
-            decode(context, uri, maxLongEdge = paper.widthDots * DECODE_LONG_EDGE_FACTOR)
-        } catch (e: OutOfMemoryError) {
-            Log.w(TAG, "Out of memory decoding $uri", e)
-            return@withContext RasterOutcome.Failure(
-                PrintError(PrintCategory.IMAGE_TOO_LARGE, detail = e.message)
+        // PhotoDecoder runs a whole ladder of decoders and never throws, so reaching null here
+        // genuinely means every one of them refused the file.
+        val decoded = PhotoDecoder.decode(
+            context = context,
+            uri = uri,
+            maxLongEdge = paper.widthDots * DECODE_LONG_EDGE_FACTOR,
+        ) ?: return@withContext RasterOutcome.Failure(
+            PrintError(
+                PrintCategory.IMAGE_DECODE_FAILED,
+                detail = "No decoder on this device could read the photo.",
             )
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to decode $uri", e)
-            return@withContext RasterOutcome.Failure(
-                PrintError(PrintCategory.IMAGE_DECODE_FAILED, cause = e, detail = e.message)
-            )
-        } ?: return@withContext RasterOutcome.Failure(
-            PrintError(PrintCategory.IMAGE_DECODE_FAILED, detail = "Decoder returned no bitmap.")
         )
 
-        buildFromBitmap(decoded, paper, opts, resolutionScale, recycleSource = true)
+        val outcome = buildFromBitmap(
+            source = decoded.bitmap,
+            paper = paper,
+            options = opts,
+            resolutionScale = resolutionScale,
+            recycleSource = true,
+        )
+
+        // The photo was readable but only after being shrunk further than asked for. That is worth
+        // saying out loud, because it is the one case where the print really is softer than usual.
+        if (outcome is RasterOutcome.Success && decoded.downgraded) {
+            outcome.copy(warnings = (outcome.warnings + RasterWarning.DECODED_AT_LOWER_QUALITY))
+        } else {
+            outcome
+        }
     }
 
     /**
@@ -143,16 +150,19 @@ class RasterPipeline(
                     targetWidth = (shrunk / 8 * 8).coerceAtLeast(8)
                 }
             }
-            val targetHeight = ((working.height.toLong() * targetWidth) / working.width)
+            // A very tall photo (a panorama turned on its side, a long screenshot) can exceed the
+            // maximum print length. Narrowing it is always better than refusing it: the user asked
+            // for this photo, and a smaller print is a print.
+            var targetHeight = ((working.height.toLong() * targetWidth) / working.width)
                 .toInt()
                 .coerceAtLeast(1)
             if (targetHeight > MAX_HEIGHT_DOTS) {
-                return@withContext RasterOutcome.Failure(
-                    PrintError(
-                        PrintCategory.IMAGE_TOO_LARGE,
-                        detail = "$targetHeight rows exceeds the $MAX_HEIGHT_DOTS row limit.",
-                    )
-                )
+                val shrunk = (targetWidth.toLong() * MAX_HEIGHT_DOTS / targetHeight).toInt()
+                targetWidth = (shrunk / 8 * 8).coerceAtLeast(8)
+                targetHeight = ((working.height.toLong() * targetWidth) / working.width)
+                    .toInt()
+                    .coerceIn(1, MAX_HEIGHT_DOTS)
+                warnings += RasterWarning.SHRUNK_TO_FIT_PAPER
             }
             if (targetHeight > LONG_PRINT_WARNING_DOTS) warnings += RasterWarning.VERY_LONG_PRINT
 
@@ -167,6 +177,20 @@ class RasterPipeline(
             ctx.ensureActive()
 
             // --- 5..7. tone, dither, pack ---------------------------------------------------
+            // getPixels() throws on a HARDWARE bitmap and misbehaves on exotic configurations, so
+            // anything that is not plain software ARGB_8888 is converted first. Usually a no-op.
+            val readable = PhotoDecoder.toReadableSoftwareBitmap(working)
+                ?: return@withContext RasterOutcome.Failure(
+                    PrintError(
+                        PrintCategory.IMAGE_DECODE_FAILED,
+                        detail = "The decoded photo could not be converted for reading.",
+                    )
+                )
+            if (readable !== working) {
+                working = readable
+                ownsWorking = true
+            }
+
             val argb = IntArray(targetWidth * targetHeight)
             working.getPixels(argb, 0, targetWidth, 0, 0, targetWidth, targetHeight)
             if (ownsWorking && working !== source) working.recycle()
@@ -223,76 +247,18 @@ class RasterPipeline(
         } catch (e: OutOfMemoryError) {
             Log.w(TAG, "Out of memory rasterizing", e)
             RasterOutcome.Failure(PrintError(PrintCategory.IMAGE_TOO_LARGE, detail = e.message))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // A geometry or pixel-access failure on an unusual bitmap must not escape as a crash:
+            // the user picked a photo, and the worst they should ever get is a typed error.
+            Log.w(TAG, "Failed to rasterize", e)
+            RasterOutcome.Failure(
+                PrintError(PrintCategory.IMAGE_DECODE_FAILED, cause = e, detail = e.message)
+            )
         } finally {
             if (ownsWorking && working !== source) working.recycle()
         }
-    }
-
-    // -------------------------------------------------------------------------------------------
-    // Decoding
-    // -------------------------------------------------------------------------------------------
-
-    /**
-     * Decodes [uri] downsampled so a 50 MP gallery photo never allocates at full size.
-     *
-     * On API 28+ `ImageDecoder` both downsamples and applies EXIF orientation for us. Below that
-     * we downsample with `inSampleSize` and read the orientation from `MediaStore`, which is the
-     * only orientation source available without pulling in another library.
-     */
-    private fun decode(context: Context, uri: Uri, maxLongEdge: Int): Bitmap? {
-        val resolver = context.contentResolver
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val source = ImageDecoder.createSource(resolver, uri)
-            ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
-                // Software allocation is required: a HARDWARE bitmap cannot be read with
-                // getPixels(), and reading pixels is the entire point of this pipeline.
-                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-                decoder.isMutableRequired = false
-                decoder.setTargetSampleSize(
-                    sampleSizeFor(max(info.size.width, info.size.height), maxLongEdge)
-                )
-            }
-        } else {
-            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-            val longEdge = max(bounds.outWidth, bounds.outHeight)
-            if (longEdge <= 0) return null
-
-            val decodeOptions = BitmapFactory.Options().apply {
-                inSampleSize = sampleSizeFor(longEdge, maxLongEdge)
-                inPreferredConfig = Bitmap.Config.ARGB_8888
-            }
-            val bitmap = resolver.openInputStream(uri)
-                ?.use { BitmapFactory.decodeStream(it, null, decodeOptions) }
-                ?: return null
-
-            val degrees = mediaStoreOrientation(context, uri)
-            if (degrees == 0) bitmap else transform(bitmap, degrees, false, false)
-                .also { if (it !== bitmap) bitmap.recycle() }
-        }
-    }
-
-    /** Largest power-of-two sample size that keeps the long edge at or above [maxLongEdge]. */
-    private fun sampleSizeFor(longEdge: Int, maxLongEdge: Int): Int {
-        var sample = 1
-        while (longEdge / (sample * 2) >= maxLongEdge && sample < MAX_SAMPLE_SIZE) sample *= 2
-        return sample
-    }
-
-    /** EXIF orientation for API 24..27, via the MediaStore column. Returns degrees, or 0. */
-    private fun mediaStoreOrientation(context: Context, uri: Uri): Int = runCatching {
-        context.contentResolver.query(
-            uri,
-            arrayOf(MediaStore.Images.Media.ORIENTATION),
-            null,
-            null,
-            null,
-        )?.use { cursor ->
-            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getInt(0) else 0
-        } ?: 0
-    }.getOrElse {
-        Log.d(TAG, "No MediaStore orientation for $uri: ${it.message}")
-        0
     }
 
     // -------------------------------------------------------------------------------------------

@@ -74,6 +74,8 @@
     <string name="preview_warning_low_resolution">This photo is lower resolution than the paper, so it will print narrower than full width.</string>
     <string name="preview_warning_rotation">This photo is wide. It has been turned 90° so it fills the paper.</string>
     <string name="preview_warning_long">This will use about %1$d mm of paper.</string>
+    <string name="preview_warning_low_quality">This photo needed extra compression to open on this device, so it will print a little softer than usual.</string>
+    <string name="preview_warning_shrunk">This photo is very tall, so it has been made narrower to fit the maximum print length.</string>
 
     <string name="tab_size">Size</string>
     <string name="tab_crop">Crop</string>

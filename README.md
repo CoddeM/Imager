@@ -105,9 +105,17 @@ and the override is persisted.
 no Android dependency at all — no `Bitmap`, no `Context`, no coroutines — so it is unit-tested on a
 plain host JVM. `RasterPipeline` owns only the parts that genuinely need Android.
 
-1. **Decode with downsampling.** `ImageDecoder` on API 28+ (which also applies EXIF orientation),
-   `BitmapFactory` + `inSampleSize` + the MediaStore orientation column below that. Never decodes
-   larger than 4 × the paper width on the long edge, so a 50 MP photo never allocates full size.
+1. **Decode, stubbornly.** `PhotoDecoder` runs a LADDER rather than a single attempt, because
+   `ImageDecoder` refuses a whole class of perfectly good files (some HEIC/HEIF encodings, HDR and
+   gainmap JPEGs from recent phone cameras, images from providers that cannot supply a seekable
+   descriptor) with `DecodeException: unimplemented`. The rungs are `ImageDecoder` →
+   `BitmapFactory` over a stream → `BitmapFactory` over a file descriptor → `BitmapFactory` at
+   RGB_565; if all four fail, the sample size doubles and the whole ladder runs again, up to 64×.
+   Because the output is dithered to one bit per dot, dropping to a smaller sample size or to
+   16-bit colour costs the printed result essentially nothing — so trading quality for "it opened"
+   is always the right trade. EXIF orientation is applied from the file itself via the framework
+   `ExifInterface` (no extra dependency) for the rungs that do not handle it. Never decodes larger
+   than 4 × the paper width on the long edge, so a 50 MP photo never allocates full size.
 2. **Rotate and flip.** Includes the optional auto-turn for wide photos, which is offered as a
    visible toggle and never applied as a silent surprise.
 3. **Crop.** A user crop in normalized coordinates, then the fit mode.
@@ -273,6 +281,7 @@ Host-JVM only; everything that needs hardware is behind an interface.
 |---|---|
 | `PaperWidthResolverTest` | every rule row, the ordering traps, wide-format fallback, host-device fallback |
 | `RasterCoreTest` | multiple-of-8 widths, no upscaling, `bytesPerRow`, exact bit packing, banding covers every row once, Floyd–Steinberg determinism, threshold exactness |
+| `PhotoDecoderTest` | the decode ladder's sizing: power-of-two sample sizes, the conservative guess when bounds are unknown, orientation-independence, no divide-by-zero on nonsense dimensions |
 | `EscPosEncoderTest` | `GS v 0` header bytes, little-endian `xL/xH` and `yL/yH`, status reply decoding |
 | `PrinterCircuitBreakerTest` | CLOSED → OPEN → HALF_OPEN with an injected clock, single-probe CAS, and the leaked-token bug `releaseProbe` prevents |
 | `PrintEngineTest` | clean-fail retries exactly once, dirty failures never retry, timeouts force-close, cancellation re-throws and emits nothing, exactly one result on every other path |

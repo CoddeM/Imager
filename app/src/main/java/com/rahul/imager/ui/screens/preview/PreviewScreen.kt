@@ -242,6 +242,12 @@ private fun PreviewPane(state: PreviewUiState, modifier: Modifier = Modifier) {
 
                     RasterWarning.VERY_LONG_PRINT ->
                         stringResource(R.string.preview_warning_long, state.outputLengthMm)
+
+                    RasterWarning.DECODED_AT_LOWER_QUALITY ->
+                        stringResource(R.string.preview_warning_low_quality)
+
+                    RasterWarning.SHRUNK_TO_FIT_PAPER ->
+                        stringResource(R.string.preview_warning_shrunk)
                 },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
