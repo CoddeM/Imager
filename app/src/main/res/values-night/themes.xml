@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The platform theme only supplies the window background that is visible for the instant before
+  Compose draws. Giving dark mode its own dark window stops the app flashing white on launch.
+  The actual colours come from ImagerTheme.
+-->
+<resources>
+    <style name="Theme.Imager" parent="android:Theme.Material.NoActionBar" />
+</resources>

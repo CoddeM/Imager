@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Every USB printer this app can drive.
+
+  The three vendor-id entries are the families with a native driver (Epson 0x04B8 = 1208,
+  Star 0x0519 = 1305, Sunmi 0x324F = 12879). The final entry matches the USB PRINTER device
+  class (7), which is how generic ESC/POS printers from every other manufacturer identify
+  themselves.
+-->
+<resources>
+    <usb-device vendor-id="1208" />
+    <usb-device vendor-id="1305" />
+    <usb-device vendor-id="12879" />
+    <usb-accessory manufacturer="Star Micronics" />
+    <usb-device class="7" />
+</resources>

@@ -1,0 +1,2 @@
+val r = Regex("\bfoo\s+bar\b")
+val s = "a\tb\nc"

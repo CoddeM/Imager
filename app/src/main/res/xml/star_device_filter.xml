@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Star Micronics USB hardware.
+  vendor-id 1305 is 0x0519. Star also exposes some models as a USB ACCESSORY rather than a
+  device, which is why the manufacturer string is matched as well.
+-->
+<resources>
+    <usb-device vendor-id="1305" />
+    <usb-accessory manufacturer="Star Micronics" />
+</resources>

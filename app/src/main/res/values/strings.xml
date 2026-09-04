@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ThermalPhoto</string>
+
+    <!-- ===================== Navigation and common actions ===================== -->
+    <string name="action_print">Print</string>
+    <string name="action_print_again">Print again</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_done">Done</string>
+    <string name="action_close">Close</string>
+    <string name="action_save">Save</string>
+    <string name="action_back">Back</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_change_printer">Change printer</string>
+    <string name="action_choose_printer">Choose a printer</string>
+    <string name="action_copy_diagnostics">Copy diagnostics</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_scan_again">Scan again</string>
+    <string name="action_add_printer">Add printer</string>
+    <string name="action_more">More</string>
+    <string name="action_skip_test">Skip test</string>
+    <string name="action_test_print">Test print</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_forget">Forget</string>
+    <string name="action_set_default">Set as default</string>
+    <string name="action_reconnect">Reconnect</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_remove">Remove</string>
+
+    <!-- ===================== Home ===================== -->
+    <string name="home_title">ThermalPhoto</string>
+    <string name="home_choose_photo">Choose a photo</string>
+    <string name="home_choose_photo_subtitle">Pick any picture from your gallery and print it on receipt paper.</string>
+    <string name="home_browse_gallery">Browse in the app</string>
+    <string name="home_recent_prints">Recent prints</string>
+    <string name="home_recent_empty">Photos you print will appear here for a one tap reprint.</string>
+    <string name="home_no_printer_banner">Connect a printer to start printing</string>
+    <string name="home_no_printer_banner_action">Set up</string>
+    <string name="home_menu_printers">Printers</string>
+    <string name="home_menu_settings">Settings</string>
+    <string name="home_reprint_content_description">Print this photo again</string>
+
+    <!-- ===================== Printer chip and state ===================== -->
+    <string name="printer_chip_none">No printer</string>
+    <string name="printer_state_connected">Connected</string>
+    <string name="printer_state_connecting">Connecting…</string>
+    <string name="printer_state_disconnected">Not connected</string>
+    <string name="printer_state_error">Needs attention</string>
+    <string name="printer_chip_content_description">Current printer. Tap to change.</string>
+
+    <!-- ===================== Photo picker ===================== -->
+    <string name="picker_title">Choose a photo</string>
+    <string name="picker_permission_rationale_title">Let ThermalPhoto see your photos</string>
+    <string name="picker_permission_rationale_message">The in-app browser needs access to your photo library so it can show your albums. The system photo picker works without any permission at all.</string>
+    <string name="picker_permission_grant">Allow access</string>
+    <string name="picker_permission_use_system">Use the system picker instead</string>
+    <string name="picker_permission_denied_forever">Photo access is turned off for this app. You can turn it back on in Settings, or keep using the system picker.</string>
+    <string name="picker_partial_access">You have shared only some photos. Tap to choose more.</string>
+    <string name="picker_partial_access_action">Select more</string>
+    <string name="picker_empty">No photos found.</string>
+
+    <!-- ===================== Preview and options ===================== -->
+    <string name="preview_title">Preview</string>
+    <string name="preview_rendering">Rendering…</string>
+    <string name="preview_compare_hint">Press and hold to compare with the original</string>
+    <string name="preview_output_size">%1$d × %2$d dots ≈ %3$d mm of paper</string>
+    <string name="preview_no_printer">No printer selected</string>
+    <string name="preview_cannot_print_images">This printer cannot print images</string>
+    <string name="preview_warning_low_resolution">This photo is lower resolution than the paper, so it will print narrower than full width.</string>
+    <string name="preview_warning_rotation">This photo is wide. It has been turned 90° so it fills the paper.</string>
+    <string name="preview_warning_long">This will use about %1$d mm of paper.</string>
+
+    <string name="tab_size">Size</string>
+    <string name="tab_crop">Crop</string>
+    <string name="tab_tone">Tone</string>
+    <string name="tab_quality">Quality</string>
+
+    <string name="option_fit_mode">Fit</string>
+    <string name="fit_width">Fit width</string>
+    <string name="fit_whole">Fit whole</string>
+    <string name="fit_fill_crop">Fill and crop</string>
+    <string name="fit_original">Original</string>
+    <string name="option_scale">Scale</string>
+    <string name="option_paper_width">Paper width</string>
+    <string name="option_margin">Margin</string>
+    <string name="option_alignment">Alignment</string>
+    <string name="option_copies">Copies</string>
+    <string name="option_feed_lines">Feed after printing</string>
+    <string name="option_cut">Cut the paper afterwards</string>
+    <string name="align_left">Left</string>
+    <string name="align_center">Centre</string>
+    <string name="align_right">Right</string>
+
+    <string name="option_rotate_left">Rotate left</string>
+    <string name="option_rotate_right">Rotate right</string>
+    <string name="option_flip_horizontal">Flip horizontally</string>
+    <string name="option_flip_vertical">Flip vertically</string>
+    <string name="option_auto_rotate">Turn wide photos to fit the paper</string>
+    <string name="option_crop_free">Free</string>
+    <string name="option_crop_square">Square</string>
+    <string name="option_crop_4_3">4:3</string>
+    <string name="option_crop_3_4">3:4</string>
+    <string name="option_crop_hint">Drag the corners to crop.</string>
+
+    <string name="option_brightness">Brightness</string>
+    <string name="option_contrast">Contrast</string>
+    <string name="option_darkness">Darkness</string>
+    <string name="option_threshold">Threshold</string>
+    <string name="option_invert">Invert</string>
+    <string name="option_grayscale_mode">Grey conversion</string>
+    <string name="grayscale_luminance">Luminance</string>
+    <string name="grayscale_average">Average</string>
+    <string name="histogram_title">Tones in this photo</string>
+
+    <string name="option_dither_mode">Dot pattern</string>
+    <string name="dither_floyd">Floyd–Steinberg</string>
+    <string name="dither_floyd_description">Best for photos and faces</string>
+    <string name="dither_atkinson">Atkinson</string>
+    <string name="dither_atkinson_description">Lighter and punchier, flattering on portraits</string>
+    <string name="dither_bayer">Ordered</string>
+    <string name="dither_bayer_description">Even texture, good for flat graphics</string>
+    <string name="dither_threshold">Hard cut</string>
+    <string name="dither_threshold_description">For line art, logos and text</string>
+    <string name="dither_none">Grey preview</string>
+    <string name="dither_none_description">Preview only, not how it prints</string>
+
+    <string name="preset_photo">Photo</string>
+    <string name="preset_high_contrast">High contrast</string>
+    <string name="preset_line_art">Line art</string>
+    <string name="preset_document">Document</string>
+    <string name="preset_custom">Custom</string>
+    <string name="presets_title">Presets</string>
+
+    <!-- ===================== Printing sheet ===================== -->
+    <string name="printing_title">Printing</string>
+    <string name="printing_resolving">Getting ready…</string>
+    <string name="printing_connecting">Connecting…</string>
+    <string name="printing_sending">Sending %1$d of %2$d</string>
+    <string name="printing_finishing">Finishing…</string>
+    <string name="printing_success">Printed</string>
+    <string name="printing_success_message">Your photo is on its way out of the printer.</string>
+    <string name="printing_failed">Print failed</string>
+    <string name="printing_copy_of">Copy %1$d of %2$d</string>
+    <string name="printing_diagnostics_copied">Diagnostics copied to the clipboard</string>
+
+    <!-- ===================== Printers screen ===================== -->
+    <string name="printers_title">Printers</string>
+    <string name="printers_empty_title">No printers yet</string>
+    <string name="printers_empty_message">Add a printer once and it stays connected, ready for every photo you print.</string>
+    <string name="printers_default_badge">Default</string>
+    <string name="printers_paper_label">%1$s paper</string>
+    <string name="printers_rename_title">Rename printer</string>
+    <string name="printers_rename_label">Name</string>
+    <string name="printers_forget_title">Forget this printer?</string>
+    <string name="printers_forget_message">%1$s will be removed. You can add it again at any time.</string>
+    <string name="printers_paper_title">Paper width</string>
+    <string name="printers_paper_message">Choose the width of the roll this printer is loaded with.</string>
+    <string name="printers_paper_custom">Custom width in dots</string>
+
+    <!-- ===================== Add printer flow ===================== -->
+    <string name="add_title">Add a printer</string>
+    <string name="add_step_connection">How is it connected?</string>
+    <string name="add_step_scan">Looking for printers</string>
+    <string name="add_step_identify">Confirm the printer</string>
+    <string name="add_step_test">Test print</string>
+
+    <string name="connection_built_in">Built-in printer</string>
+    <string name="connection_built_in_description">The printer inside this device</string>
+    <string name="connection_bluetooth">Bluetooth</string>
+    <string name="connection_bluetooth_description">A paired portable or desktop printer</string>
+    <string name="connection_lan">Wi-Fi or Ethernet</string>
+    <string name="connection_lan_description">A printer on the same network</string>
+    <string name="connection_usb">USB</string>
+    <string name="connection_usb_description">A printer plugged into this device</string>
+
+    <string name="add_scanning">Scanning…</string>
+    <string name="add_scan_finished">Scan finished</string>
+    <string name="add_nothing_found">Nothing found. Check the printer is switched on, then scan again.</string>
+    <string name="add_manual_entry">Enter the address manually</string>
+    <string name="add_manual_ip">IP address</string>
+    <string name="add_manual_port">Port</string>
+    <string name="add_manual_add">Add</string>
+    <string name="add_bonded_devices">Paired devices</string>
+    <string name="add_family_unavailable">SDK not bundled in this build</string>
+    <string name="add_identify_name">Name</string>
+    <string name="add_identify_model">Model</string>
+    <string name="add_identify_paper">Paper</string>
+    <string name="add_identify_paper_resolved">Detected automatically. You can change it.</string>
+    <string name="add_identify_connecting">Checking the printer…</string>
+    <string name="add_identify_reachable">The printer answered. It is ready to use.</string>
+    <string name="add_identify_status">Printer reports: %1$s</string>
+    <string name="add_identify_status_ok">ready</string>
+    <string name="add_identify_status_paper_out">out of paper</string>
+    <string name="add_identify_status_paper_low">paper nearly out</string>
+    <string name="add_identify_status_cover_open">cover open</string>
+    <string name="add_identify_status_overheat">too hot</string>
+    <string name="add_identify_status_offline">offline</string>
+    <string name="add_test_intro">Print a small test slip to make sure everything works before saving.</string>
+    <string name="add_test_running">Printing a test…</string>
+    <string name="add_test_success">The test printed. Saving this printer.</string>
+    <string name="add_saved">Printer saved</string>
+    <string name="add_bt_permission_needed">ThermalPhoto needs the Bluetooth permission to find and connect printers.</string>
+    <string name="add_bt_permission_grant">Allow Bluetooth</string>
+    <string name="add_usb_detected">Printer detected. Add it?</string>
+
+    <!-- ===================== Settings and diagnostics ===================== -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_default_printer">Default printer</string>
+    <string name="settings_default_options">Default print options</string>
+    <string name="settings_default_options_summary">New photos open with the settings you used last.</string>
+    <string name="settings_theme">Appearance</string>
+    <string name="settings_theme_system">Follow the system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_keep_recents">Keep recent prints</string>
+    <string name="settings_keep_recents_summary">Remember the last 20 photos you printed.</string>
+    <string name="settings_clear_cache">Clear cached thumbnails</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_version_hint">Long press for diagnostics</string>
+
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_empty">No print attempts have been recorded in this session.</string>
+    <string name="diagnostics_copy_all">Copy all</string>
+    <string name="diagnostics_clear">Clear</string>
+    <string name="diagnostics_families">Driver families</string>
+    <string name="diagnostics_family_available">Available</string>
+
+    <!-- ===================== Paper profiles ===================== -->
+    <string name="paper_58mm">58 mm</string>
+    <string name="paper_80mm">80 mm</string>
+    <string name="paper_pat">Dejavoo built-in</string>
+    <string name="paper_76mm">76 mm impact</string>
+    <string name="paper_custom">%1$d dots</string>
+
+    <!-- ===================== Error catalog ===================== -->
+    <!-- IMAGE -->
+    <string name="err_image_decode_failed_title">That photo could not be opened</string>
+    <string name="err_image_decode_failed_message">The file may be damaged, or in a format this device cannot read.</string>
+    <string name="err_image_decode_failed_action">Choose a different photo</string>
+    <string name="err_image_too_large_title">That photo is too large</string>
+    <string name="err_image_too_large_message">There was not enough memory to prepare it, or it would use more paper than the printer can handle in one go.</string>
+    <string name="err_image_too_large_action">Crop it, or reduce the scale, then try again</string>
+    <string name="err_image_empty_title">There is nothing to print</string>
+    <string name="err_image_empty_message">The crop left no image behind.</string>
+    <string name="err_image_empty_action">Reset the crop and try again</string>
+
+    <!-- ROUTING -->
+    <string name="err_no_printer_title">No printer selected</string>
+    <string name="err_no_printer_message">ThermalPhoto does not know where to send this photo yet.</string>
+    <string name="err_no_printer_action">Choose a printer, then tap Print</string>
+    <string name="err_no_driver_title">This printer cannot be driven</string>
+    <string name="err_no_driver_message">The saved printer type does not support the way it is connected.</string>
+    <string name="err_no_driver_action">Forget the printer and add it again</string>
+    <string name="err_missing_address_title">This printer has no address</string>
+    <string name="err_missing_address_message">The saved entry is missing the IP address or MAC address needed to reach it.</string>
+    <string name="err_missing_address_action">Forget the printer and add it again</string>
+    <string name="err_sdk_absent_title">This printer is not supported in this build</string>
+    <string name="err_sdk_absent_message">The manufacturer library for this printer family was not bundled into the app.</string>
+    <string name="err_sdk_absent_action">Use a different printer, or install a build that includes the library</string>
+
+    <!-- PERMISSION -->
+    <string name="err_bt_permission_title">Bluetooth permission needed</string>
+    <string name="err_bt_permission_message">Android will not let the app reach a Bluetooth printer until you allow it.</string>
+    <string name="err_bt_permission_action">Grant the Bluetooth permission and tap Retry</string>
+    <string name="err_usb_permission_title">USB permission needed</string>
+    <string name="err_usb_permission_message">Android asks for permission each time an app talks to a USB device.</string>
+    <string name="err_usb_permission_action">Allow the USB request and tap Retry</string>
+    <string name="err_media_permission_title">Photo access needed</string>
+    <string name="err_media_permission_message">The in-app photo browser needs access to your library.</string>
+    <string name="err_media_permission_action">Grant photo access, or use the system picker</string>
+
+    <!-- CONNECTION -->
+    <string name="err_bt_off_title">Bluetooth is off</string>
+    <string name="err_bt_off_message">The printer is connected over Bluetooth, which is currently switched off.</string>
+    <string name="err_bt_off_action">Turn on Bluetooth and tap Retry</string>
+    <string name="err_bt_not_paired_title">Printer is not paired</string>
+    <string name="err_bt_not_paired_message">Android can only reach Bluetooth printers that have been paired in system settings.</string>
+    <string name="err_bt_not_paired_action">Pair the printer in Bluetooth settings, then tap Retry</string>
+    <string name="err_bt_pairing_failed_title">Pairing failed</string>
+    <string name="err_bt_pairing_failed_message">The printer refused the pairing request, or the PIN was wrong.</string>
+    <string name="err_bt_pairing_failed_action">Pair the printer in Bluetooth settings, then tap Retry</string>
+    <string name="err_bt_pairing_timeout_title">Pairing timed out</string>
+    <string name="err_bt_pairing_timeout_message">The printer did not finish pairing in time.</string>
+    <string name="err_bt_pairing_timeout_action">Move closer to the printer and tap Retry</string>
+    <string name="err_bt_unreachable_title">Cannot reach the printer</string>
+    <string name="err_bt_unreachable_message">The printer is paired but did not answer over Bluetooth.</string>
+    <string name="err_bt_unreachable_action">Check it is switched on and in range, then tap Retry</string>
+    <string name="err_lan_unreachable_title">Cannot reach the printer</string>
+    <string name="err_lan_unreachable_message">Nothing answered at that address on this network.</string>
+    <string name="err_lan_unreachable_action">Check the printer and this device are on the same network, then tap Retry</string>
+    <string name="err_lan_timeout_title">The printer did not answer</string>
+    <string name="err_lan_timeout_message">The connection to the printer timed out.</string>
+    <string name="err_lan_timeout_action">Check the printer is awake, then tap Retry</string>
+    <string name="err_usb_not_enumerated_title">USB printer not found</string>
+    <string name="err_usb_not_enumerated_message">No printer is currently plugged in at the saved USB address.</string>
+    <string name="err_usb_not_enumerated_action">Plug the printer in and tap Reconnect</string>
+    <string name="err_service_not_bound_title">Built-in printer unavailable</string>
+    <string name="err_service_not_bound_message">The print service on this device did not respond.</string>
+    <string name="err_service_not_bound_action">Restart the device, then tap Retry</string>
+    <string name="err_connect_timeout_title">Connecting took too long</string>
+    <string name="err_connect_timeout_message">The printer did not accept a connection in time.</string>
+    <string name="err_connect_timeout_action">Check the printer is on and tap Retry</string>
+    <string name="err_connect_failed_title">Could not connect</string>
+    <string name="err_connect_failed_message">The printer refused the connection.</string>
+    <string name="err_connect_failed_action">Check the printer is on and not in use, then tap Retry</string>
+
+    <!-- SEND -->
+    <string name="err_send_timeout_title">Sending took too long</string>
+    <string name="err_send_timeout_message">The printer stopped responding while the photo was being sent.</string>
+    <string name="err_send_timeout_action">Check the paper and tap Retry</string>
+    <string name="err_disconnected_mid_print_title">The printer disconnected</string>
+    <string name="err_disconnected_mid_print_message">The connection dropped part way through the photo.</string>
+    <string name="err_disconnected_mid_print_action">Check the cable or the battery, then tap Retry</string>
+    <string name="err_unprintable_title">The printer refused this photo</string>
+    <string name="err_unprintable_message">This model cannot print the image as it is set up.</string>
+    <string name="err_unprintable_action">Try a narrower paper width or a different pattern</string>
+    <string name="err_partial_print_title">Only part of the photo printed</string>
+    <string name="err_partial_print_message">The connection failed after some of the image had already reached the paper.</string>
+    <string name="err_partial_print_action">Tear off the partial print and tap Retry</string>
+    <string name="err_send_failed_title">The photo could not be sent</string>
+    <string name="err_send_failed_message">The printer rejected the data.</string>
+    <string name="err_send_failed_action">Tap Retry, or reconnect the printer</string>
+
+    <!-- STATUS -->
+    <string name="err_paper_out_title">Out of paper</string>
+    <string name="err_paper_out_message">The printer has run out of paper.</string>
+    <string name="err_paper_out_action">Load paper and tap Retry</string>
+    <string name="err_paper_low_title">Paper is nearly out</string>
+    <string name="err_paper_low_message">There may not be enough paper left for this photo.</string>
+    <string name="err_paper_low_action">Load a fresh roll and tap Retry</string>
+    <string name="err_paper_jam_title">Paper jam</string>
+    <string name="err_paper_jam_message">The paper is not feeding correctly.</string>
+    <string name="err_paper_jam_action">Clear the jam, close the cover and tap Retry</string>
+    <string name="err_cover_open_title">The cover is open</string>
+    <string name="err_cover_open_message">The printer cannot print while its paper cover is open.</string>
+    <string name="err_cover_open_action">Close the cover and tap Retry</string>
+    <string name="err_offline_title">The printer is offline</string>
+    <string name="err_offline_message">The printer is reachable but reports that it is not ready.</string>
+    <string name="err_offline_action">Switch the printer off and on again, then tap Retry</string>
+    <string name="err_overheat_title">The printer is too hot</string>
+    <string name="err_overheat_message">The print head has overheated and has paused to cool down.</string>
+    <string name="err_overheat_action">Wait a minute, then tap Retry</string>
+    <string name="err_cutter_title">The cutter is stuck</string>
+    <string name="err_cutter_message">The paper cutter reported a fault.</string>
+    <string name="err_cutter_action">Clear the cutter, or turn off cutting in the print options</string>
+    <string name="err_battery_low_title">The printer battery is low</string>
+    <string name="err_battery_low_message">There is not enough charge left to print reliably.</string>
+    <string name="err_battery_low_action">Charge the printer and tap Retry</string>
+    <string name="err_busy_title">The printer is busy</string>
+    <string name="err_busy_message">Another job is still being printed.</string>
+    <string name="err_busy_action">Wait for it to finish and tap Retry</string>
+
+    <!-- POSTPROCESS / UNKNOWN -->
+    <string name="err_disconnect_failed_title">The printer did not disconnect cleanly</string>
+    <string name="err_disconnect_failed_message">Your photo printed, but the connection did not close properly.</string>
+    <string name="err_disconnect_failed_action">No action needed. Reconnect if the next print fails.</string>
+    <string name="err_unknown_title">Something went wrong</string>
+    <string name="err_unknown_message">The print failed for a reason the app could not identify.</string>
+    <string name="err_unknown_action">Tap Retry, and copy the diagnostics if it keeps happening</string>
+</resources>

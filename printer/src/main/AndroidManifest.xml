@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      The StarIO10 SDK declares minSdk 26 while this app supports API 24. Star hardware simply is
+      not reachable on API 24/25, so instead of raising the app's minSdk we override the merge and
+      gate every Star code path behind an explicit runtime API check (see StarPrinterManager /
+      StarDriverFactory#isSupported). On API 24/25 the Star family reports itself unavailable and
+      routing returns PRN-ROUTE-SDK-ABSENT rather than crashing.
+    -->
+    <uses-sdk tools:overrideLibrary="com.starmicronics.stario10" />
+
+    <!-- Hardware the printer module can talk to. None of it is required to install the app. -->
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.accessory" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+
+</manifest>
