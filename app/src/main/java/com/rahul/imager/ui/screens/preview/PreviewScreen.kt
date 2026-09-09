@@ -395,7 +395,7 @@ private fun PrintingSheet(
         onDispose { view.keepScreenOn = false }
     }
 
-    val copyToClipboard = rememberClipboardCopier(label = "ThermalPhoto diagnostics")
+    val copyToClipboard = rememberClipboardCopier(label = "Imager diagnostics")
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
