@@ -66,7 +66,7 @@ class BuildTestPrintUseCase @Inject constructor() {
         // Title.
         paint.textSize = 34f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("ThermalPhoto", MARGIN, 48f, paint)
+        canvas.drawText("Imager", MARGIN, 48f, paint)
 
         // Printer identity and geometry.
         paint.textSize = 24f

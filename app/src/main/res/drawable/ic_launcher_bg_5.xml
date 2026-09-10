@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Brand default. Used by @mipmap/ic_launcher, which is what Settings and the app info screen show. -->
+<!-- Friday. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -14,8 +14,8 @@
                 android:startY="0"
                 android:endX="108"
                 android:endY="108">
-                <item android:color="#7C8CF8" android:offset="0.0" />
-                <item android:color="#2C3A87" android:offset="1.0" />
+                <item android:color="#F472B6" android:offset="0.0" />
+                <item android:color="#9D174D" android:offset="1.0" />
             </gradient>
         </aapt:attr>
     </path>

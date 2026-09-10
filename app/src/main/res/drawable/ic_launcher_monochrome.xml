@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Themed-icon (Android 13+) variant. A themed icon is a single-colour silhouette, so the detail
+  that the full-colour foreground gets from dark ink is cut out here as holes instead.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Printer body with the paper mouth punched out. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M31,26 h46 a5,5 0 0 1 5,5 v14 a5,5 0 0 1 -5,5 h-46 a5,5 0 0 1 -5,-5 v-14 a5,5 0 0 1 5,-5 z M37,42 h34 a3,3 0 1 1 0,6 h-34 a3,3 0 1 1 0,-6 z" />
+
+    <!-- Paper strip with the sun and mountains punched out. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M36,50 L72,50 L72,76 l-3.6,4 l-3.6,-4 l-3.6,4 l-3.6,-4 l-3.6,4 l-3.6,-4 l-3.6,4 l-3.6,-4 l-3.6,4 l-3.6,-4 L36,50 Z M64,53.6 a3.4,3.4 0 1 1 0,6.8 a3.4,3.4 0 1 1 0,-6.8 z M39,74 L48.5,58 L55,67 L60,60.5 L69,74 Z" />
+</vector>

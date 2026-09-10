@@ -1,9 +1,21 @@
+import com.android.build.api.variant.impl.VariantOutputImpl
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+// Shared by defaultConfig and the APK file name below, so both move together.
+val appVersionName = "1.1"
+val appVersionCode = 2
+
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
 }
 
 android {
@@ -18,14 +30,26 @@ android {
         applicationId = "com.rahul.imager"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropsFile.exists()) {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
@@ -42,6 +66,16 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+}
+
+// Ship the APK as Imager-v<version>.apk instead of AGP's default app-<buildtype>.apk.
+androidComponents {
+    onVariants { variant ->
+        val suffix = if (variant.buildType == "release") "" else "-${variant.buildType}"
+        variant.outputs.forEach { output ->
+            (output as? VariantOutputImpl)?.outputFileName?.set("Imager-v$appVersionName$suffix.apk")
+        }
     }
 }
 

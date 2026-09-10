@@ -48,7 +48,7 @@ fun DiagnosticsScreen(
     modifier: Modifier = Modifier,
 ) {
     val traces by PrintTraceRecorder.traces.collectAsStateWithLifecycle()
-    val copyToClipboard = rememberClipboardCopier(label = "ThermalPhoto diagnostics")
+    val copyToClipboard = rememberClipboardCopier(label = "Imager diagnostics")
 
     Scaffold(
         modifier = modifier,

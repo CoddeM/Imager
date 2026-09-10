@@ -6,6 +6,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -85,6 +87,10 @@ fun ImagerApp(
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            // The three top-level screens each carry their own Scaffold and TopAppBar, which apply
+            // the status bar inset themselves. Handing it to them a second time here is what put
+            // an empty system-bar-tall strip above every top app bar.
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 if (showNavigation && !useRail) {
                     NavigationBar {
@@ -116,7 +122,9 @@ fun ImagerApp(
                             onReprint = { uri ->
                                 navController.navigate(PreviewRoute(uri.toString()))
                             },
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier
+                                .padding(innerPadding)
+                                .consumeWindowInsets(innerPadding),
                         )
                     }
 
@@ -147,7 +155,9 @@ fun ImagerApp(
                     composable<PrintersRoute> {
                         PrintersScreen(
                             onAddPrinter = { navController.navigate(AddPrinterRoute) },
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier
+                                .padding(innerPadding)
+                                .consumeWindowInsets(innerPadding),
                         )
                     }
 
@@ -161,7 +171,9 @@ fun ImagerApp(
                     composable<SettingsRoute> {
                         SettingsScreen(
                             onOpenDiagnostics = { navController.navigate(DiagnosticsRoute) },
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier
+                                .padding(innerPadding)
+                                .consumeWindowInsets(innerPadding),
                         )
                     }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ThermalPhoto</string>
+    <string name="app_name">Imager</string>
 
     <!-- ===================== Navigation and common actions ===================== -->
     <string name="action_print">Print</string>
@@ -33,7 +33,7 @@
     <string name="action_remove">Remove</string>
 
     <!-- ===================== Home ===================== -->
-    <string name="home_title">ThermalPhoto</string>
+    <string name="home_title">Home</string>
     <string name="home_choose_photo">Choose a photo</string>
     <string name="home_choose_photo_subtitle">Pick any picture from your gallery and print it on receipt paper.</string>
     <string name="home_browse_gallery">Browse in the app</string>
@@ -55,7 +55,7 @@
 
     <!-- ===================== Photo picker ===================== -->
     <string name="picker_title">Choose a photo</string>
-    <string name="picker_permission_rationale_title">Let ThermalPhoto see your photos</string>
+    <string name="picker_permission_rationale_title">Let Imager see your photos</string>
     <string name="picker_permission_rationale_message">The in-app browser needs access to your photo library so it can show your albums. The system photo picker works without any permission at all.</string>
     <string name="picker_permission_grant">Allow access</string>
     <string name="picker_permission_use_system">Use the system picker instead</string>
@@ -206,7 +206,7 @@
     <string name="add_test_running">Printing a test…</string>
     <string name="add_test_success">The test printed. Saving this printer.</string>
     <string name="add_saved">Printer saved</string>
-    <string name="add_bt_permission_needed">ThermalPhoto needs the Bluetooth permission to find and connect printers.</string>
+    <string name="add_bt_permission_needed">Imager needs the Bluetooth permission to find and connect printers.</string>
     <string name="add_bt_permission_grant">Allow Bluetooth</string>
     <string name="add_usb_detected">Printer detected. Add it?</string>
 
@@ -254,7 +254,7 @@
 
     <!-- ROUTING -->
     <string name="err_no_printer_title">No printer selected</string>
-    <string name="err_no_printer_message">ThermalPhoto does not know where to send this photo yet.</string>
+    <string name="err_no_printer_message">Imager does not know where to send this photo yet.</string>
     <string name="err_no_printer_action">Choose a printer, then tap Print</string>
     <string name="err_no_driver_title">This printer cannot be driven</string>
     <string name="err_no_driver_message">The saved printer type does not support the way it is connected.</string>
