@@ -10,8 +10,8 @@ plugins {
 }
 
 // Shared by defaultConfig and the APK file name below, so both move together.
-val appVersionName = "1.0"
-val appVersionCode = 1
+val appVersionName = "1.1"
+val appVersionCode = 2
 
 val keystorePropsFile = rootProject.file("keystore.properties")
 val keystoreProps = Properties().apply {
