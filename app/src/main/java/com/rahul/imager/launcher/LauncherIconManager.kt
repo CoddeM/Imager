@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import com.rahul.imager.BuildConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
 import javax.inject.Inject
@@ -36,8 +37,18 @@ class LauncherIconManager @Inject constructor(
      *
      * Call once from [Application.onCreate]. Foreground swaps are deliberately not attempted: see
      * the note on this class.
+     *
+     * DEBUG BUILDS DO NOT SWAP. Android Studio resolves the activity to launch from the merged
+     * manifest, which names the Monday alias; once a swap has disabled that alias, every Run ends
+     * in "Activity class {…launcher.Day1} does not exist". A daily icon is not worth breaking the
+     * Run button, so debug builds instead put the aliases back to their manifest state, which also
+     * repairs an install that was already swapped.
      */
     fun startSwappingOnBackground(application: Application) {
+        if (BuildConfig.DEBUG) {
+            application.registerActivityLifecycleCallbacks(resetOnBackground())
+            return
+        }
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             private var startedActivities = 0
 
@@ -93,6 +104,52 @@ class LauncherIconManager @Inject constructor(
                     PackageManager.DONT_KILL_APP,
                 )
             }
+        }
+    }
+
+    /**
+     * Returns every alias to its manifest default, so the launcher entry Android Studio expects is
+     * enabled again.
+     *
+     * Runs on background for the same reason the swap does: changing the component a foreground
+     * task was launched from tears that task down.
+     */
+    private fun resetOnBackground(): Application.ActivityLifecycleCallbacks =
+        object : Application.ActivityLifecycleCallbacks {
+            private var startedActivities = 0
+
+            override fun onActivityStarted(activity: Activity) {
+                startedActivities++
+            }
+
+            override fun onActivityStopped(activity: Activity) {
+                startedActivities--
+                if (startedActivities == 0 && !activity.isChangingConfigurations) {
+                    resetToManifestDefaults()
+                }
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        }
+
+    /** Clears every explicit component state, letting the manifest decide again. */
+    private fun resetToManifestDefaults() {
+        val packageManager = context.packageManager
+        val alreadyDefault = aliases.all {
+            packageManager.getComponentEnabledSetting(it) ==
+                PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+        }
+        if (alreadyDefault) return
+        aliases.forEach { alias ->
+            packageManager.setComponentEnabledSetting(
+                alias,
+                PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,
+                PackageManager.DONT_KILL_APP,
+            )
         }
     }
 

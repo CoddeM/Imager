@@ -1,6 +1,7 @@
 package com.rahul.imager.printer.driver.landi
 
 import android.content.Context
+import android.os.Build
 import com.rahul.imager.printer.domain.PrintCategory
 import com.rahul.imager.printer.domain.PrinterBrand
 import com.rahul.imager.printer.domain.PrinterStatus
@@ -73,6 +74,14 @@ object LandiDriverFactory : PrinterDriverFactory {
         return LandiThermalPrinter(saved.displayName)
     }
 
+    /**
+      * Names what this device actually reports.
+      *
+      * The family is detected from the Build fields, so a genuine Landi terminal that happens to
+      * brand itself differently would silently look unsupported. Printing the values it does
+      * report turns that from an invisible dead end into something a user can read out.
+      */
     override fun unavailableReason(context: Context): String =
-        "The built-in Landi printer only exists on Landi terminals"
+        "The built-in Landi printer only exists on Landi terminals. This device reports " +
+            "${Build.MANUFACTURER} / ${Build.BRAND} / ${Build.MODEL}."
 }

@@ -140,7 +140,7 @@ object VolcoraManager {
     fun usbDevicePaths(context: Context): List<String> {
         ensureInitialized(context)
         val claimed = claimedUsbDevicePaths(context)
-        return runCatching { POSConnect.getUsbDevice(context.applicationContext).orEmpty() }
+        return runCatching { POSConnect.getUsbDevices(context.applicationContext).orEmpty() }
             .getOrElse {
                 Log.w(TAG, "getUsbDevice failed", it)
                 emptyList()

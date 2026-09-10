@@ -2,6 +2,7 @@ package com.rahul.imager.printer.driver.epson
 
 import android.content.Context
 import android.util.Log
+import com.epson.epos2.Epos2CallbackCode
 import com.epson.epos2.printer.Printer
 import com.epson.epos2.printer.PrinterStatusInfo
 import com.epson.epos2.printer.ReceiveListener
@@ -285,7 +286,7 @@ class EpsonThermalPrinter(
                 detail = outcome.throwable.message,
             )
 
-            outcome.code == Printer.CODE_SUCCESS -> null
+            outcome.code == Epos2CallbackCode.CODE_SUCCESS -> null
 
             else -> PrintError(
                 category = EpsonErrorMapper.fromStatus(outcome.status) ?: PrintCategory.SEND_FAILED,

@@ -5,10 +5,10 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.util.Base64
 import android.util.Log
-import com.denovo.app.invokekozen.printer.IntentPrintApplication
-import com.denovo.app.invokekozen.printer.PrintErrorResult
-import com.denovo.app.invokekozen.printer.PrintLauncherInterface
-import com.denovo.app.invokekozen.printer.PrintResult
+import com.denovo.app.invokekozen.printer.interfaces.PrintLauncherInterface
+import com.denovo.app.invokekozen.printer.launcher.IntentPrintApplication
+import com.denovo.app.invokekozen.printer.models.PrintErrorResult
+import com.denovo.app.invokekozen.printer.models.PrintResult
 import com.rahul.imager.printer.domain.PrintCategory
 import com.rahul.imager.printer.domain.PrintError
 import com.rahul.imager.printer.domain.PrinterBrand
@@ -191,12 +191,17 @@ class DejavooThermalPrinter(
                 override fun onPrintSuccess(result: PrintResult?) = finish(null)
 
                 override fun onPrintFailed(result: PrintErrorResult?) {
-                    val code = runCatching { result?.toString() }.getOrNull()
+                    val code = result?.let { "code=${it.errorCode}" }
+                    val message = result?.errorMessage
                     finish(
                         PrintError(
                             category = PrintCategory.SEND_FAILED,
                             context = printerContext.copy(vendorErrorCode = code),
-                            detail = "The Dejavoo printer rejected the job: $code",
+                            cause = result?.errorException,
+                            detail = message
+                                ?: "The Dejavoo printer rejected the job${
+                                    code?.let { " ($it)" }.orEmpty()
+                                }.",
                         )
                     )
                 }
@@ -204,7 +209,7 @@ class DejavooThermalPrinter(
 
             runCatching {
                 app.setLaunchInterface(listener)
-                app.print(markup)
+                app.launchPrinter(markup)
             }.onFailure {
                 Log.w(TAG, "Dejavoo print call threw", it)
                 finish(

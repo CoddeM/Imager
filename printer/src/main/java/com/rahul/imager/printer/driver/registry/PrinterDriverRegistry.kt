@@ -112,20 +112,39 @@ object PrinterDriverRegistry {
         return known.map { brand ->
             val factory = present[brand]
             when {
+                // No vendor driver, but the family speaks ESC/POS over a socket: the generic
+                // driver stands in, so the family is usable — just not with vendor discovery or
+                // live status. Saying "not bundled" here would tell the user their printer is
+                // unsupported when the app can demonstrably drive it.
+                factory == null && brand in PrinterRouter.ESCPOS_COMPATIBLE_FAMILIES ->
+                    FamilyAvailability(
+                        brand = brand,
+                        supportedTransports = GenericDriverFactory.supportedTransports,
+                        available = true,
+                        reason = "ESC/POS mode - vendor SDK not bundled",
+                        requiredSdkArtifact = OPTIONAL_BRANDS[brand],
+                        support = FamilySupport.ESCPOS_COMPATIBILITY,
+                    )
+
                 factory == null -> FamilyAvailability(
                     brand = brand,
                     supportedTransports = emptySet(),
                     available = false,
                     reason = "SDK not bundled in this build",
                     requiredSdkArtifact = OPTIONAL_BRANDS[brand],
+                    support = FamilySupport.SDK_MISSING,
                 )
 
+                // The driver is here; the hardware is not. Saying "SDK not bundled" for this
+                // case sends the user looking for a different BUILD when what they need is a
+                // different DEVICE.
                 !factory.isSupported(context) -> FamilyAvailability(
                     brand = brand,
                     supportedTransports = factory.supportedTransports,
                     available = false,
                     reason = factory.unavailableReason(context),
                     requiredSdkArtifact = factory.requiredSdkArtifact,
+                    support = FamilySupport.DEVICE_UNSUPPORTED,
                 )
 
                 else -> FamilyAvailability(
@@ -134,6 +153,7 @@ object PrinterDriverRegistry {
                     available = true,
                     reason = null,
                     requiredSdkArtifact = factory.requiredSdkArtifact,
+                    support = FamilySupport.FULL,
                 )
             }
         }.sortedBy { it.brand.ordinal }
@@ -170,7 +190,15 @@ object PrinterDriverRegistry {
                         PrintCategory.SDK_NOT_BUNDLED,
                         "No driver factory for ${decision.brand}.",
                     )
-                val effective = saved.copy(brand = decision.brand, transport = decision.transport)
+                decision.compatibilityFor?.let {
+                    Log.i(TAG, "Driving $it over generic ESC/POS: vendor SDK not in this build.")
+                }
+                // In compatibility mode the generic driver does the work but the printer keeps its
+                // real brand, so traces, diagnostics and the UI still call it by name.
+                val effective = saved.copy(
+                    brand = decision.compatibilityFor ?: decision.brand,
+                    transport = decision.transport,
+                )
                 val printer = factory.create(effective)
                     ?: return PrinterRouting.Unroutable(
                         PrintCategory.NO_DRIVER_FOR_MODEL,

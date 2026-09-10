@@ -14,9 +14,11 @@ import com.rahul.imager.printer.domain.ThermalPrinter
 import com.rahul.imager.printer.domain.TransportType
 import com.rahul.imager.printer.raster.Alignment
 import com.rahul.imager.printer.raster.RasterJob
+import com.sdksuite.omnidriver.OmniConnection
 import com.sdksuite.omnidriver.OmniDriver
-import com.sdksuite.omnidriver.device.printer.OnPrintListener
-import com.sdksuite.omnidriver.device.printer.Printer
+import com.sdksuite.omnidriver.aidl.printer.Align
+import com.sdksuite.omnidriver.api.OnPrintListener
+import com.sdksuite.omnidriver.api.Printer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -38,9 +40,8 @@ import kotlin.coroutines.resume
  * moments after the callback set it.
  *
  * Package-layout note: these classes are only present when `xsuite-omnidriver-api-*.aar` has been
- * dropped into `printer/libs/`. The import paths follow the SDK's documented layout; if a
- * differently packaged build is used, the imports at the top of this file are the only thing that
- * needs adjusting.
+ * dropped into `printer/libs/`. The paths are taken from the shipped 0.2.0+240924 artifact: the
+ * printer surface is `com.sdksuite.omnidriver.api`, and binding goes through `OmniConnection`.
  */
 object LandiPrinterManager {
 
@@ -84,13 +85,22 @@ object LandiPrinterManager {
                 }
 
                 runCatching {
-                    val instance = OmniDriver.getInstance()
+                    val instance = OmniDriver.me(context.applicationContext)
                     driver = instance
-                    instance.connect(context.applicationContext) {
-                        val resolved = runCatching { instance.printer }.getOrNull()
-                        printer = resolved
-                        finish(resolved)
-                    }
+                    instance.init(object : OmniConnection {
+                        override fun onConnected() {
+                            val resolved = runCatching { instance.getPrinter() }.getOrNull()
+                            printer = resolved
+                            finish(resolved)
+                        }
+
+                        override fun onDisconnected(error: Int) {
+                            // The service can die at any point, including before it ever came up.
+                            Log.w(TAG, "OmniDriver disconnected (code $error)")
+                            printer = null
+                            finish(null)
+                        }
+                    })
                 }.onFailure {
                     Log.w(TAG, "OmniDriver connect threw", it)
                     finish(null)
@@ -101,8 +111,8 @@ object LandiPrinterManager {
 
     /** Releases the driver. */
     fun release() {
-        runCatching { driver?.disconnect() }
-            .onFailure { Log.d(TAG, "disconnect threw: ${it.message}") }
+        runCatching { driver?.destroy() }
+            .onFailure { Log.d(TAG, "destroy threw: ${it.message}") }
         printer = null
         driver = null
     }
@@ -207,7 +217,7 @@ class LandiThermalPrinter(
     override suspend fun queryStatus(context: Context?): PrinterStatus? {
         val ctx = context ?: return null
         val printer = LandiPrinterManager.connect(ctx) ?: return null
-        val status = runCatching { printer.status }.getOrNull() ?: return null
+        val status = runCatching { printer.getStatus() }.getOrNull() ?: return null
         return LandiErrorMapper.toDomain(status)
     }
 
@@ -224,16 +234,18 @@ class LandiThermalPrinter(
                     }
                 }
 
+                // The SDK's callback carries a code and nothing else, so the human-readable
+                // half of the failure has to come from the error mapper.
                 val listener = object : OnPrintListener {
-                    override fun onPrintSuccess() = finish(null)
+                    override fun onSuccess() = finish(null)
 
-                    override fun onPrintFailed(code: Int, message: String?) {
+                    override fun onFail(error: Int) {
                         finish(
                             PrintError(
-                                category = LandiErrorMapper.fromCode(code)
+                                category = LandiErrorMapper.fromCode(error)
                                     ?: PrintCategory.SEND_FAILED,
-                                context = printerContext.copy(vendorErrorCode = "code=$code"),
-                                detail = message,
+                                context = printerContext.copy(vendorErrorCode = "code=$error"),
+                                detail = "The Landi printer reported error code $error.",
                             )
                         )
                     }
@@ -265,7 +277,7 @@ class LandiThermalPrinter(
      * specific send error with a vague "printer says it is fine" would be a downgrade.
      */
     private fun refine(printer: Printer, error: PrintError): PrintError {
-        val status = runCatching { printer.status }.getOrNull() ?: return error
+        val status = runCatching { printer.getStatus() }.getOrNull() ?: return error
         val mapped = LandiErrorMapper.fromStatus(status) ?: return error
         if (mapped.stage != Stage.STATUS) return error
         return error.copy(
@@ -296,18 +308,15 @@ class LandiThermalPrinter(
 
     /** Landi's alignment values, with the RL firmware quirk applied. */
     private fun alignmentValue(alignment: Alignment): Int {
-        if (LandiPrinterManager.requiresRightAlignment) return ALIGN_RIGHT
+        if (LandiPrinterManager.requiresRightAlignment) return Align.RIGHT
         return when (alignment) {
-            Alignment.LEFT -> ALIGN_LEFT
-            Alignment.CENTER -> ALIGN_CENTER
-            Alignment.RIGHT -> ALIGN_RIGHT
+            Alignment.LEFT -> Align.LEFT
+            Alignment.CENTER -> Align.CENTER
+            Alignment.RIGHT -> Align.RIGHT
         }
     }
 
     private companion object {
         const val TAG = "LandiThermalPrinter"
-        const val ALIGN_LEFT = 0
-        const val ALIGN_CENTER = 1
-        const val ALIGN_RIGHT = 2
     }
 }

@@ -192,6 +192,8 @@
     <string name="add_bonded_devices">Paired devices</string>
     <string name="add_family_unavailable">SDK not bundled in this build</string>
     <string name="add_family_unavailable_badge">Not bundled</string>
+    <string name="add_family_escpos_badge">ESC/POS mode</string>
+    <string name="add_family_device_badge">Not on this device</string>
     <string name="add_identify_name">Name</string>
     <string name="add_identify_model">Model</string>
     <string name="add_identify_paper">Paper</string>
@@ -267,7 +269,7 @@
     <string name="err_missing_address_message">The saved entry is missing the IP address or MAC address needed to reach it.</string>
     <string name="err_missing_address_action">Forget the printer and add it again</string>
     <string name="err_sdk_absent_title">This printer is not supported in this build</string>
-    <string name="err_sdk_absent_message">The manufacturer library for this printer family was not bundled into the app.</string>
+    <string name="err_sdk_absent_message">The head of this printer is built into the terminal and can only be reached through the manufacturer library, which was not bundled into this build.</string>
     <string name="err_sdk_absent_action">Use a different printer, or install a build that includes the library</string>
 
     <!-- PERMISSION -->

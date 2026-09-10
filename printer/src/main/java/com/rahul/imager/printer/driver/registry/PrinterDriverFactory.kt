@@ -53,6 +53,31 @@ interface PrinterDriverFactory {
             ?: "Not supported on this device"
 }
 
+/** How completely this build can drive one family. */
+enum class FamilySupport {
+
+    /** The vendor driver is compiled in: discovery, live status and model quirks all work. */
+    FULL,
+
+    /**
+     * The vendor SDK is absent, but the family speaks ESC/POS over a socket and the generic driver
+     * stands in. Printing works; vendor discovery and status reporting do not.
+     */
+    ESCPOS_COMPATIBILITY,
+
+    /** The driver is not compiled into this build, because its vendor SDK was not bundled. */
+    SDK_MISSING,
+
+    /**
+     * The driver IS in this build, but the family cannot exist on this hardware - a built-in head
+     * welded into another manufacturer's terminal, or an API level the SDK will not run on.
+     *
+     * Kept apart from [SDK_MISSING] because the two need opposite things from the user: one is
+     * fixed by shipping a different build, the other by using a different device.
+     */
+    DEVICE_UNSUPPORTED,
+}
+
 /** What the UI shows about one family in the add-printer flow. */
 data class FamilyAvailability(
     val brand: PrinterBrand,
@@ -60,4 +85,6 @@ data class FamilyAvailability(
     val available: Boolean,
     val reason: String?,
     val requiredSdkArtifact: String?,
+    val support: FamilySupport =
+        if (available) FamilySupport.FULL else FamilySupport.SDK_MISSING,
 )

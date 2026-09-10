@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import net.posprinter.posprinterface.UdpCallback
-import net.posprinter.utils.PosUdpNet
+import net.posprinter.esc.PosUdpNet
 
 /**
  * Discovery for the Volcora / Xprinter-OEM family.

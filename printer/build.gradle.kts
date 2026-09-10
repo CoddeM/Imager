@@ -82,6 +82,17 @@ android {
     }
 }
 
+/**
+ * This module is never published; the app consumes it as a project dependency.
+ *
+ * That matters because AGP refuses to bundle a library AAR that has direct local `.aar`
+ * dependencies, which is exactly what the vendor SDKs in `libs/` are. Without this,
+ * `./gradlew assemble` starts failing the moment one of those artifacts is dropped in - for an
+ * artifact nothing consumes.
+ */
+tasks.matching { it.name.startsWith("bundle") && it.name.endsWith("Aar") }
+    .configureEach { enabled = false }
+
 dependencies {
     enabledSdks.forEach { sdk -> implementation(files("libs/${sdk.fileName}")) }
 

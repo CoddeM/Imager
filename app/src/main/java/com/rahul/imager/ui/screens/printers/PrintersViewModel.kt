@@ -11,6 +11,7 @@ import com.rahul.imager.printer.domain.PrintError
 import com.rahul.imager.printer.domain.SavedPrinter
 import com.rahul.imager.usecase.DeletePrinterUseCase
 import com.rahul.imager.usecase.ResolvePaperProfileUseCase
+import com.rahul.imager.usecase.EscPosCompatibilityFamiliesUseCase
 import com.rahul.imager.usecase.SetDefaultPrinterUseCase
 import com.rahul.imager.usecase.TestPrintUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +27,8 @@ data class PrinterRow(
     val printer: SavedPrinter,
     val state: ConnectionState,
     val paper: PaperProfile,
+    /** True when this printer is driven over generic ESC/POS because its vendor SDK is absent. */
+    val escPosCompatibility: Boolean = false,
 )
 
 /** Where a test print from this screen has got to. */
@@ -49,12 +52,16 @@ class PrintersViewModel @Inject constructor(
     private val connectionManager: PrinterConnectionManager,
     private val resolvePaperProfile: ResolvePaperProfileUseCase,
     private val setDefaultPrinter: SetDefaultPrinterUseCase,
+    escPosCompatibilityFamilies: EscPosCompatibilityFamiliesUseCase,
     private val deletePrinter: DeletePrinterUseCase,
     private val testPrint: TestPrintUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PrintersUiState())
     val uiState: StateFlow<PrintersUiState> = _uiState.asStateFlow()
+
+    // Resolved once: which families are in compatibility mode is fixed by what this build bundles.
+    private val compatibilityFamilies = escPosCompatibilityFamilies()
 
     init {
         viewModelScope.launch {
@@ -68,6 +75,7 @@ class PrintersViewModel @Inject constructor(
                         printer = printer,
                         state = states[printer.id] ?: ConnectionState.Disconnected,
                         paper = resolvePaperProfile(printer, overrides),
+                        escPosCompatibility = printer.brand in compatibilityFamilies,
                     )
                 }
             }.collect { rows ->

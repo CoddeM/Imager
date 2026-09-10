@@ -10,6 +10,7 @@ import com.rahul.imager.printer.domain.PrinterBrand
 import com.rahul.imager.printer.domain.SavedPrinter
 import com.rahul.imager.printer.domain.TransportType
 import com.rahul.imager.printer.driver.registry.FamilyAvailability
+import com.rahul.imager.printer.driver.registry.FamilySupport
 import com.rahul.imager.printer.driver.registry.PrinterDriverRegistry
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -53,6 +54,25 @@ class DiscoverPrintersUseCase @Inject constructor(
         .filter { it.isSupported(context) }
         .flatMap { it.supportedTransports }
         .toSet()
+}
+
+/**
+ * Which families this build drives through the generic ESC/POS driver rather than their own.
+ *
+ * The printer still prints; what it loses is vendor discovery, live status and model quirks. The
+ * UI marks those printers so a missing status readout reads as a known limitation rather than a
+ * fault.
+ */
+@Singleton
+class EscPosCompatibilityFamiliesUseCase @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) {
+
+    operator fun invoke(): Set<PrinterBrand> =
+        PrinterDriverRegistry.availability(context)
+            .filter { it.support == FamilySupport.ESCPOS_COMPATIBILITY }
+            .map { it.brand }
+            .toSet()
 }
 
 /**

@@ -1,6 +1,7 @@
 package com.rahul.imager.printer.driver.dejavoo
 
 import android.content.Context
+import android.os.Build
 import com.rahul.imager.printer.domain.PrinterBrand
 import com.rahul.imager.printer.domain.SavedPrinter
 import com.rahul.imager.printer.domain.ThermalPrinter
@@ -28,8 +29,10 @@ object DejavooDriverFactory : PrinterDriverFactory {
         return DejavooThermalPrinter(saved.displayName)
     }
 
+    /** See the note on LandiDriverFactory: the Build values make a missed match diagnosable. */
     override fun unavailableReason(context: Context): String =
-        "The built-in Dejavoo printer only exists on Kozen terminals"
+        "The built-in Dejavoo printer only exists on Kozen terminals. This device reports " +
+            "${Build.MANUFACTURER} / ${Build.BRAND} / ${Build.MODEL}."
 }
 
 /**

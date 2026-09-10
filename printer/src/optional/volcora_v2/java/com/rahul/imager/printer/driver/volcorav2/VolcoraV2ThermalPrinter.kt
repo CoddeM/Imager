@@ -164,13 +164,18 @@ class VolcoraV2ThermalPrinter(
                 bands.forEachIndexed { index, band ->
                     currentCoroutineContext().ensureActive()
                     val bandBitmap = job.bandBitmap(band)
-                    val written = instance.printImage(
-                        bandBitmap,
-                        job.options.alignment.toPAlign(),
-                        0,
-                        false,
-                    )
-                    if (written < 0) {
+                    // printImage returns void, so a dead pipe arrives as a thrown exception
+                    // rather than as a negative byte count.
+                    val failure = runCatching {
+                        instance.printImage(
+                            bandBitmap,
+                            job.options.alignment.toPAlign(),
+                            0,
+                            false,
+                        )
+                    }.exceptionOrNull()
+                    if (failure is CancellationException) throw failure
+                    if (failure != null) {
                         // Stop immediately: every further write into a dead pipe just delays the
                         // error the user is waiting for.
                         return@withLock PrintError(
@@ -179,8 +184,11 @@ class VolcoraV2ThermalPrinter(
                             } else {
                                 PrintCategory.SEND_FAILED
                             },
-                            context = printerContext.copy(vendorErrorCode = "write=$written"),
-                            detail = "printImage returned $written on band ${index + 1}.",
+                            context = printerContext.copy(
+                                vendorErrorCode = failure.javaClass.simpleName,
+                            ),
+                            cause = failure,
+                            detail = "printImage failed on band ${index + 1}: ${failure.message}",
                         )
                     }
                     committedToPaper = true
@@ -274,10 +282,15 @@ class VolcoraV2ThermalPrinter(
         Alignment.RIGHT -> Command.ALIGN_RIGHT
     }
 
+    /**
+      * This SDK names its alignment values by writing direction, not by side: START and END rather
+      * than LEFT and RIGHT. For the left-to-right receipts this app prints they mean the same
+      * thing.
+      */
     private fun Alignment.toPAlign(): PAlign = when (this) {
-        Alignment.LEFT -> PAlign.LEFT
+        Alignment.LEFT -> PAlign.START
         Alignment.CENTER -> PAlign.CENTER
-        Alignment.RIGHT -> PAlign.RIGHT
+        Alignment.RIGHT -> PAlign.END
     }
 
     private companion object {

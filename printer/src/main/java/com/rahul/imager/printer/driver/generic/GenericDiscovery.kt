@@ -11,6 +11,8 @@ import com.rahul.imager.printer.domain.PrinterBrand
 import com.rahul.imager.printer.domain.TransportType
 import com.rahul.imager.printer.transport.BluetoothLink
 import com.rahul.imager.printer.transport.UsbHostPermission
+import com.rahul.imager.printer.driver.registry.PrinterDriverRegistry
+import com.rahul.imager.printer.driver.registry.PrinterRouter
 import com.rahul.imager.printer.transport.UsbVendorId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -84,24 +86,46 @@ object GenericDiscovery : PrinterDiscovery {
     }
 
     private fun usbDevices(context: Context): Flow<DiscoveredPrinter> = flow {
-        UsbHostPermission.attachedDevices(context)
-            // A device whose VID belongs to a native family must NOT be offered here.
-            .filter { it.vendorId !in UsbVendorId.KNOWN_PRINTER_VENDORS }
-            .forEach { device ->
-                val name = runCatching { device.productName }.getOrNull()
-                    ?: runCatching { device.manufacturerName }.getOrNull()
-                    ?: device.deviceName
-                emit(
-                    DiscoveredPrinter(
-                        brand = PrinterBrand.GENERIC_ESCPOS,
-                        transport = TransportType.USB,
-                        identifier = device.deviceName,
-                        name = name,
-                        model = runCatching { device.productName }.getOrNull(),
-                        detail = "VID 0x%04X · PID 0x%04X".format(device.vendorId, device.productId),
-                    )
+        val nativeFamilies = PrinterDriverRegistry.availableFamilies(context)
+        UsbHostPermission.attachedDevices(context).forEach { device ->
+            val offerAs = usbBrandFor(device.vendorId, nativeFamilies) ?: return@forEach
+            val name = runCatching { device.productName }.getOrNull()
+                ?: runCatching { device.manufacturerName }.getOrNull()
+                ?: device.deviceName
+            emit(
+                DiscoveredPrinter(
+                    brand = offerAs,
+                    transport = TransportType.USB,
+                    identifier = device.deviceName,
+                    name = name,
+                    model = runCatching { device.productName }.getOrNull(),
+                    detail = "VID 0x%04X · PID 0x%04X".format(device.vendorId, device.productId),
                 )
-            }
+            )
+        }
+    }
+
+    /**
+     * Which brand, if any, this scan should offer a USB device under.
+     *
+     * Three outcomes, and the middle one is the reason this function exists:
+     *
+     *  * an unclaimed VID is a third-party ESC/POS printer — offer it as generic;
+     *  * a VID whose family has a driver in this build belongs to THAT family's scan, not this one;
+     *  * a VID whose family has no driver here, but which speaks ESC/POS over the wire, is offered
+     *    under its real brand so the user can still add it. Before this, such a device was hidden
+     *    by both scans at once and could not be added at all.
+     *
+     * Anything else — a family that is unavailable for a reason ESC/POS cannot fix, such as Star
+     * below API 26 — is left alone rather than driven with a command set it may not accept.
+     */
+    internal fun usbBrandFor(vendorId: Int, nativeFamilies: Set<PrinterBrand>): PrinterBrand? {
+        val family = UsbVendorId.familyForVid(vendorId) ?: return PrinterBrand.GENERIC_ESCPOS
+        return when {
+            family in nativeFamilies -> null
+            family in PrinterRouter.ESCPOS_COMPATIBLE_FAMILIES -> family
+            else -> null
+        }
     }
 
     /**

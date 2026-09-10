@@ -71,10 +71,90 @@ class PrinterRouterTest {
     }
 
     @Test
-    fun `an absent optional family is a typed refusal, not a fallback`() {
-        val available = allFamilies - PrinterBrand.EPSON
+    fun `an absent ESC-POS family falls back to the generic driver over every socket`() {
+        for (brand in PrinterRouter.ESCPOS_COMPATIBLE_FAMILIES) {
+            val available = allFamilies - brand
+            for (transport in listOf(
+                TransportType.LAN,
+                TransportType.BLUETOOTH,
+                TransportType.USB,
+            )) {
+                val decision = PrinterRouter.decide(
+                    saved(brand = brand, transport = transport, identifier = "addr"),
+                    available,
+                )
+                assertEquals(
+                    RoutingDecision.Use(
+                        brand = PrinterBrand.GENERIC_ESCPOS,
+                        transport = transport,
+                        compatibilityFor = brand,
+                    ),
+                    decision,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `the fallback records which family it is standing in for`() {
+        val decision = PrinterRouter.decide(
+            saved(brand = PrinterBrand.EPSON),
+            allFamilies - PrinterBrand.EPSON,
+        )
+        assertEquals(
+            PrinterBrand.EPSON,
+            (decision as RoutingDecision.Use).compatibilityFor,
+        )
+    }
+
+    @Test
+    fun `a present vendor family is never diverted to the fallback`() {
+        val decision = PrinterRouter.decide(saved(brand = PrinterBrand.EPSON), allFamilies)
+        assertEquals(
+            RoutingDecision.Use(PrinterBrand.EPSON, TransportType.LAN),
+            decision,
+        )
+    }
+
+    @Test
+    fun `an absent built-in family is a typed refusal, because it has no socket`() {
+        for (brand in PrinterRouter.CONNECTION_INDEPENDENT_FAMILIES) {
+            val available = allFamilies - brand
+            val decision = PrinterRouter.decide(
+                saved(brand = brand, transport = TransportType.INNER, identifier = ""),
+                available,
+            )
+            assertTrue("$brand should refuse", decision is RoutingDecision.Refuse)
+            assertEquals(
+                PrintCategory.SDK_NOT_BUNDLED,
+                (decision as RoutingDecision.Refuse).category,
+            )
+        }
+    }
+
+    @Test
+    fun `the fallback needs the generic driver itself to be present`() {
+        val available = setOf(PrinterBrand.STAR)
         val decision = PrinterRouter.decide(saved(brand = PrinterBrand.EPSON), available)
 
+        assertTrue(decision is RoutingDecision.Refuse)
+        assertEquals(
+            PrintCategory.SDK_NOT_BUNDLED,
+            (decision as RoutingDecision.Refuse).category,
+        )
+    }
+
+    @Test
+    fun `an absent family on the built-in transport is refused even when it is ESC-POS capable`() {
+        // A Volcora saved as INNER has no socket to fall back onto, whatever the family can speak.
+        val decision = PrinterRouter.decide(
+            saved(
+                brand = PrinterBrand.VOLCORA,
+                transport = TransportType.INNER,
+                identifier = "",
+            ),
+            allFamilies - PrinterBrand.VOLCORA,
+        )
         assertTrue(decision is RoutingDecision.Refuse)
         assertEquals(
             PrintCategory.SDK_NOT_BUNDLED,

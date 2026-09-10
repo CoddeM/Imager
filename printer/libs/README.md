@@ -2,8 +2,26 @@
 
 Drop the artifacts below into **this directory** (`printer/libs/`) to enable the matching driver
 family. Nothing here is required: the project compiles, installs and runs with this directory
-completely empty, and any family whose artifact is missing simply reports the error code
-`PRN-ROUTE-SDK-ABSENT` and is shown greyed out in the add-printer screen.
+completely empty.
+
+## What happens when an artifact is missing
+
+Two different things, depending on how the printer is reached.
+
+**Socket-reachable families — Epson, Volcora, Volcora V2 — fall back to generic ESC/POS.** These
+are ordinary ESC/POS receipt printers over LAN, Bluetooth SPP or USB; the vendor SDK buys
+discovery, live status and model-specific quirks, not the ability to print at all. Without the
+artifact `PrinterRouter` routes them to `GenericEscPosPrinter` while keeping their real brand, the
+USB scan offers them under that brand instead of hiding them, and the add-printer screen marks the
+family **ESC/POS mode** rather than greying it out. Printing works; vendor discovery and status do
+not.
+
+**Built-in terminal families — Landi, Dejavoo — still refuse.** Their heads are bound services
+inside a payment terminal with no socket for ESC/POS to travel over, so a missing artifact is a
+typed refusal with the error code `PRN-ROUTE-SDK-ABSENT` and the family stays greyed out.
+
+The rule lives in `PrinterRouter.ESCPOS_COMPATIBLE_FAMILIES`, and
+`PrinterRouterTest` / `GenericDiscoveryTest` pin both halves of it.
 
 The wiring lives in `printer/build.gradle.kts` (`optionalSdk(...)`). For each artifact it checks
 whether the file exists and, only then, adds **both** the dependency **and** the source directory
@@ -46,8 +64,14 @@ Gradle logs one line per artifact at configuration time:
 ```
 
 At runtime `PrinterDriverRegistry` logs the same conclusion under the tag
-`PrinterDriverRegistry`, and the add-printer screen shows unavailable families greyed out with the
-artifact name as the reason.
+`PrinterDriverRegistry`, and logs one line per job that falls back:
+
+```
+Driving EPSON over generic ESC/POS: vendor SDK not in this build.
+```
+
+The add-printer screen shows three states per family: **Available** (vendor driver),
+**ESC/POS mode** (fallback) and **Not bundled** (no route at all).
 
 ## A note on the two built-in-terminal SDKs
 

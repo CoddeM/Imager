@@ -9,8 +9,18 @@ import com.rahul.imager.printer.transport.UsbVendorId
 /** The family and transport a job should be sent through, or a typed refusal. */
 sealed interface RoutingDecision {
 
-    /** Send the job through [brand] over [transport]. */
-    data class Use(val brand: PrinterBrand, val transport: TransportType) : RoutingDecision
+    /**
+     * Send the job through [brand] over [transport].
+     *
+     * [compatibilityFor] is set only when [brand] is the generic ESC/POS driver standing in for a
+     * vendor family whose SDK is not in this build. It carries the family the printer actually
+     * belongs to, so the driver and the UI can keep calling it by its real name.
+     */
+    data class Use(
+        val brand: PrinterBrand,
+        val transport: TransportType,
+        val compatibilityFor: PrinterBrand? = null,
+    ) : RoutingDecision
 
     /** The job cannot be routed, for a reason the user can act on. */
     data class Refuse(val category: PrintCategory, val detail: String) : RoutingDecision
@@ -58,12 +68,28 @@ object PrinterRouter {
             )
         }
 
-        // 3. The family has to be present. An optional family whose SDK was never bundled is a
-        //    typed refusal, NOT a fallback to some other vendor's driver.
+        // 3. The family has to be present — or be one that speaks plain ESC/POS over a socket.
+        //
+        //    Most receipt printers are ESC/POS devices underneath; the vendor SDK buys discovery,
+        //    status reporting and model-specific quirks, not the ability to print at all. So when
+        //    a socket-reachable family's SDK is missing we fall back to the generic driver rather
+        //    than refusing a printer the app can demonstrably drive. Families welded into a host
+        //    terminal have no socket to fall back to, so for them a missing SDK is still a typed
+        //    refusal.
         if (brand !in availableFamilies) {
-            return RoutingDecision.Refuse(
-                PrintCategory.SDK_NOT_BUNDLED,
-                "The $brand driver is not available in this build.",
+            val canSpeakEscPos = brand in ESCPOS_COMPATIBLE_FAMILIES &&
+                saved.transport in ESCPOS_TRANSPORTS &&
+                PrinterBrand.GENERIC_ESCPOS in availableFamilies
+            if (!canSpeakEscPos) {
+                return RoutingDecision.Refuse(
+                    PrintCategory.SDK_NOT_BUNDLED,
+                    "The $brand driver is not available in this build.",
+                )
+            }
+            return RoutingDecision.Use(
+                brand = PrinterBrand.GENERIC_ESCPOS,
+                transport = saved.transport,
+                compatibilityFor = brand,
             )
         }
 
@@ -82,5 +108,29 @@ object PrinterRouter {
     val CONNECTION_INDEPENDENT_FAMILIES: Set<PrinterBrand> = setOf(
         PrinterBrand.LANDI,
         PrinterBrand.DEJAVOO,
+    )
+
+    /**
+     * Families the generic ESC/POS driver can stand in for when their vendor SDK is absent.
+     *
+     * All three are ordinary ESC/POS receipt printers reachable over a socket: Epson defined the
+     * command set, and the Volcora/Xprinter and Volcora V2/SPRT units implement it. Membership
+     * here is a claim about the WIRE PROTOCOL, not about feature parity — the fallback prints, but
+     * it does not get the vendor's discovery, live status or model quirks.
+     *
+     * Landi and Dejavoo are deliberately absent: their heads are bound services inside a payment
+     * terminal, with no socket for ESC/POS to travel over.
+     */
+    val ESCPOS_COMPATIBLE_FAMILIES: Set<PrinterBrand> = setOf(
+        PrinterBrand.EPSON,
+        PrinterBrand.VOLCORA,
+        PrinterBrand.VOLCORA_V2,
+    )
+
+    /** The transports the ESC/POS fallback can actually travel over. */
+    private val ESCPOS_TRANSPORTS: Set<TransportType> = setOf(
+        TransportType.LAN,
+        TransportType.BLUETOOTH,
+        TransportType.USB,
     )
 }

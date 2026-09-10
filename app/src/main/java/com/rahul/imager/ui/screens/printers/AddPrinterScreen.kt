@@ -78,6 +78,7 @@ import com.rahul.imager.printer.domain.PaperProfiles
 import com.rahul.imager.printer.domain.PrinterStatus
 import com.rahul.imager.printer.domain.TransportType
 import com.rahul.imager.printer.driver.registry.FamilyAvailability
+import com.rahul.imager.printer.driver.registry.FamilySupport
 import com.rahul.imager.ui.components.DetailRow
 import com.rahul.imager.ui.components.EmptyState
 import com.rahul.imager.ui.components.ErrorPanel
@@ -311,6 +312,7 @@ private fun StepProgress(current: Int, total: Int, modifier: Modifier = Modifier
 @Composable
 private fun FamilyRow(family: FamilyAvailability) {
     val statusColors = LocalStatusColors.current
+    val compatibility = family.support == FamilySupport.ESCPOS_COMPATIBILITY
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -320,15 +322,15 @@ private fun FamilyRow(family: FamilyAvailability) {
         IconTile(
             icon = Icons.Default.Print,
             size = 36.dp,
-            tint = if (family.available) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+            tint = when {
+                compatibility -> statusColors.warning
+                family.available -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
-            background = if (family.available) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer
+            background = when {
+                compatibility -> statusColors.warningTint
+                family.available -> MaterialTheme.colorScheme.primaryContainer
+                else -> MaterialTheme.colorScheme.surfaceContainer
             },
         )
         Spacer(Modifier.width(12.dp))
@@ -353,14 +355,25 @@ private fun FamilyRow(family: FamilyAvailability) {
             )
         }
         Spacer(Modifier.width(10.dp))
-        if (family.available) {
-            StatusPill(
+        when {
+            // Three states, not two: a family the generic ESC/POS driver can drive is usable, but
+            // saying "Available" would promise the vendor discovery and status it does not have.
+            compatibility -> StatusPill(
+                text = stringResource(R.string.add_family_escpos_badge),
+                color = statusColors.warning,
+                tint = statusColors.warningTint,
+            )
+
+            family.available -> StatusPill(
                 text = stringResource(R.string.diagnostics_family_available),
                 color = statusColors.connected,
                 tint = statusColors.connectedTint,
             )
-        } else {
-            MetaChip(text = stringResource(R.string.add_family_unavailable_badge))
+
+            family.support == FamilySupport.DEVICE_UNSUPPORTED ->
+                MetaChip(text = stringResource(R.string.add_family_device_badge))
+
+            else -> MetaChip(text = stringResource(R.string.add_family_unavailable_badge))
         }
     }
 }
@@ -566,7 +579,10 @@ private fun IdentifyStep(state: AddPrinterUiState, viewModel: AddPrinterViewMode
                 Text(stringResource(R.string.add_identify_connecting))
             }
 
-            state.identifyError != null -> ErrorPanel(error = state.identifyError)
+            state.identifyError != null -> ErrorPanel(
+                error = state.identifyError,
+                onRetry = viewModel::continueToIdentify,
+            )
 
             state.reachable == true -> Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),

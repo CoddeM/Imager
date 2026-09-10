@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -144,6 +145,7 @@ fun PrinterStatusChip(
 fun ErrorPanel(
     error: PrintError,
     modifier: Modifier = Modifier,
+    onRetry: (() -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
 ) {
     val presentation = PrintErrorCatalog.presentationFor(error.category)
@@ -170,7 +172,15 @@ fun ErrorPanel(
                     text = stringResource(presentation.titleRes),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
                 )
+                // Most of these errors end with "and tap Retry". The button belongs in the panel
+                // that says so, on the same line as the title, rather than somewhere the user has
+                // to go looking for it.
+                if (onRetry != null) {
+                    Spacer(Modifier.width(10.dp))
+                    RetryButton(onClick = onRetry, color = statusColors.error)
+                }
             }
             Text(
                 text = stringResource(presentation.messageRes),
@@ -192,6 +202,40 @@ fun ErrorPanel(
                 Spacer(Modifier.height(2.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { it() }
             }
+        }
+    }
+}
+
+/** The retry affordance inside [ErrorPanel], sized to sit on the title line. */
+@Composable
+private fun RetryButton(
+    onClick: () -> Unit,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, color.copy(alpha = 0.35f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(15.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.action_retry),
+                style = MaterialTheme.typography.labelMedium,
+                color = color,
+            )
         }
     }
 }

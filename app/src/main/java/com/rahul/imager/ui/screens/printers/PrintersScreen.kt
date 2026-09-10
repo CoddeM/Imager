@@ -190,10 +190,14 @@ fun PrintersScreen(
     }
 
     (state.testPrint as? TestPrintState.Failed)?.let { failed ->
+        // Retrying means running the same test print again, so the failed printer has to be found
+        // by id; the dialog only carries the id, not the row.
+        val target = state.rows.firstOrNull { it.printer.id == failed.printerId }?.printer
+        val retry: (() -> Unit)? = target?.let { printer -> { viewModel.runTestPrint(printer) } }
         AlertDialog(
             onDismissRequest = viewModel::dismissTestPrint,
             title = { Text(stringResource(R.string.action_test_print)) },
-            text = { ErrorPanel(error = failed.error) },
+            text = { ErrorPanel(error = failed.error, onRetry = retry) },
             confirmButton = {
                 TextButton(onClick = viewModel::dismissTestPrint) {
                     Text(stringResource(R.string.action_close))
@@ -332,6 +336,9 @@ private fun PrinterCard(
                 tint = connectionStateTint(row.state),
             )
             MetaChip(text = stringResource(R.string.printers_paper_label, row.paper.label))
+            if (row.escPosCompatibility) {
+                MetaChip(text = stringResource(R.string.add_family_escpos_badge))
+            }
         }
     }
 }
