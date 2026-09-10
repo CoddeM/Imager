@@ -16,79 +16,110 @@ import androidx.compose.ui.platform.LocalContext
 import com.rahul.imager.data.ThemeMode
 
 private val LightScheme = lightColorScheme(
-    primary = Ember,
+    primary = BrandBlue,
     onPrimary = Color.White,
-    primaryContainer = EmberContainer,
-    onPrimaryContainer = Color(0xFF3A1600),
-    secondary = Slate,
+    primaryContainer = BrandTint,
+    onPrimaryContainer = BrandInk,
+    secondary = TextMutedLight,
     onSecondary = Color.White,
-    secondaryContainer = SlateContainer,
-    onSecondaryContainer = Color(0xFF16272D),
-    tertiary = Color(0xFF6B5B3E),
-    background = PaperWhite,
-    onBackground = InkBlack,
-    surface = PaperWhite,
-    onSurface = InkBlack,
-    surfaceVariant = PaperSurface,
-    onSurfaceVariant = InkMuted,
-    surfaceContainer = PaperSurface,
-    surfaceContainerHigh = PaperSurfaceHigh,
-    outline = InkOutline,
-    outlineVariant = Color(0xFFE2DACD),
+    secondaryContainer = SurfaceMutedLight,
+    onSecondaryContainer = TextLight,
+    tertiary = BrandBluePressed,
+    background = PageLight,
+    onBackground = TextLight,
+    surface = SurfaceLight,
+    onSurface = TextLight,
+    surfaceVariant = SurfaceMutedLight,
+    onSurfaceVariant = TextMutedLight,
+    surfaceContainerLowest = SurfaceLight,
+    surfaceContainerLow = SurfaceLight,
+    surfaceContainer = SurfaceMutedLight,
+    surfaceContainerHigh = SurfaceSunkenLight,
+    surfaceContainerHighest = SurfaceSunkenLight,
+    outline = BorderStrongLight,
+    outlineVariant = BorderLight,
+    error = StatusError,
+    onError = Color.White,
+    errorContainer = StatusErrorTint,
+    onErrorContainer = Color(0xFF6B1111),
+    scrim = Color(0xFF0A1020),
 )
 
 private val DarkScheme = darkColorScheme(
-    primary = EmberLight,
-    onPrimary = Color(0xFF411800),
-    primaryContainer = EmberContainerDark,
-    onPrimaryContainer = EmberContainer,
-    secondary = SlateLight,
-    onSecondary = Color(0xFF12262D),
-    secondaryContainer = SlateContainerDark,
-    onSecondaryContainer = SlateContainer,
-    tertiary = Color(0xFFD8C4A0),
-    background = NightBackground,
-    onBackground = NightInk,
-    surface = NightBackground,
-    onSurface = NightInk,
-    surfaceVariant = NightSurface,
-    onSurfaceVariant = NightInkMuted,
-    surfaceContainer = NightSurface,
-    surfaceContainerHigh = NightSurfaceHigh,
-    outline = NightOutline,
-    outlineVariant = Color(0xFF2E2A26),
+    primary = BrandBlueLight,
+    onPrimary = Color(0xFF04204F),
+    primaryContainer = BrandTintDark,
+    onPrimaryContainer = Color(0xFFD8E4FF),
+    secondary = TextMutedDark,
+    onSecondary = Color(0xFF0A1020),
+    secondaryContainer = SurfaceMutedDark,
+    onSecondaryContainer = TextDark,
+    tertiary = BrandBlueLight,
+    background = PageDark,
+    onBackground = TextDark,
+    surface = SurfaceDark,
+    onSurface = TextDark,
+    surfaceVariant = SurfaceMutedDark,
+    onSurfaceVariant = TextMutedDark,
+    surfaceContainerLowest = PageDark,
+    surfaceContainerLow = SurfaceDark,
+    surfaceContainer = SurfaceMutedDark,
+    surfaceContainerHigh = SurfaceSunkenDark,
+    surfaceContainerHighest = SurfaceSunkenDark,
+    outline = BorderStrongDark,
+    outlineVariant = BorderDark,
+    error = StatusErrorDark,
+    onError = Color(0xFF3B0A0A),
+    errorContainer = StatusErrorTintDark,
+    onErrorContainer = Color(0xFFFFD9D9),
+    scrim = Color(0xFF000000),
 )
 
 /**
- * Colours the printer state dot uses.
+ * Colours with no Material slot.
  *
- * They are not part of `ColorScheme` because Material has no slot for "this thing is healthy", and
- * inventing one out of `primary` would make a connected printer change colour under dynamic
- * theming — which is exactly the sort of state signal that must stay recognisable.
+ * Printer state is the main one: Material has nowhere to say "this thing is healthy", and building
+ * it out of `primary` would make a connected printer change colour with the theme — exactly the
+ * sort of signal that has to stay recognisable at a glance.
  */
 data class StatusColors(
     val connected: Color,
     val warning: Color,
     val error: Color,
     val idle: Color,
+    val connectedTint: Color,
+    val warningTint: Color,
+    val errorTint: Color,
+    val gradientStart: Color,
+    val gradientEnd: Color,
 )
 
 /** Access to [StatusColors] from anywhere inside [ImagerTheme]. */
 val LocalStatusColors: ProvidableCompositionLocal<StatusColors> = staticCompositionLocalOf {
-    StatusColors(StatusConnected, StatusWarning, Color.Red, Color.Gray)
+    StatusColors(
+        connected = StatusConnected,
+        warning = StatusWarning,
+        error = StatusError,
+        idle = BorderStrongLight,
+        connectedTint = StatusConnectedTint,
+        warningTint = StatusWarningTint,
+        errorTint = StatusErrorTint,
+        gradientStart = BrandGradientStart,
+        gradientEnd = BrandGradientEnd,
+    )
 }
 
 /**
  * The app theme.
  *
- * Dynamic colour is used on Android 12+ because a utility the user opens ten times a day should
- * feel like part of their phone. The hand-tuned ink-and-paper scheme is the fallback, and is what
- * gives the app its own identity everywhere else.
+ * Dynamic colour is OFF by default. It is a lovely default for a system utility, but this app has
+ * an identity of its own — one blue, everywhere, doing all the work — and letting the wallpaper
+ * repaint it turns every button a different colour on every phone.
  */
 @Composable
 fun ImagerTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val darkTheme = when (themeMode) {
@@ -112,6 +143,11 @@ fun ImagerTheme(
         warning = if (darkTheme) StatusWarningDark else StatusWarning,
         error = colorScheme.error,
         idle = colorScheme.outline,
+        connectedTint = if (darkTheme) StatusConnectedTintDark else StatusConnectedTint,
+        warningTint = if (darkTheme) StatusWarningTintDark else StatusWarningTint,
+        errorTint = if (darkTheme) StatusErrorTintDark else StatusErrorTint,
+        gradientStart = if (darkTheme) BrandBlue else BrandGradientStart,
+        gradientEnd = if (darkTheme) BrandGradientEnd else BrandGradientEnd,
     )
 
     CompositionLocalProvider(LocalStatusColors provides statusColors) {

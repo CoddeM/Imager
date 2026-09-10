@@ -3,6 +3,7 @@ package com.rahul.imager.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,12 +16,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,7 +36,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.rahul.imager.ui.theme.CodeTextStyle
 
-/** A small caps-ish heading used to separate groups of options. */
+/**
+ * The small heading that separates groups of options.
+ *
+ * Quieter than [SectionTitle], which heads a whole screen section — this one labels a control
+ * group inside a card, so it steps back to a muted uppercase label.
+ */
 @Composable
 fun SectionHeader(
     text: String,
@@ -46,8 +53,8 @@ fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge,
+            text = text.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
@@ -76,15 +83,17 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        IconTile(
+            icon = icon,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            background = MaterialTheme.colorScheme.surfaceContainer,
+            size = 56.dp,
         )
+        Spacer(Modifier.height(4.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
         Text(
@@ -165,15 +174,38 @@ fun <T> SegmentedOptionRow(
     androidx.compose.foundation.layout.FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         options.forEach { option ->
-            FilterChip(
-                selected = option.value == selected,
+            val isSelected = option.value == selected
+            val container = when {
+                !option.enabled -> MaterialTheme.colorScheme.surfaceContainer
+                isSelected -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.surface
+            }
+            val content = when {
+                !option.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                isSelected -> Color.White
+                else -> MaterialTheme.colorScheme.onSurface
+            }
+            Surface(
                 onClick = { onSelect(option.value) },
                 enabled = option.enabled,
-                label = { Text(option.label) },
-            )
+                shape = CircleShape,
+                color = container,
+                border = if (isSelected || !option.enabled) {
+                    null
+                } else {
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                },
+            ) {
+                Text(
+                    text = option.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = content,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                )
+            }
         }
     }
 }

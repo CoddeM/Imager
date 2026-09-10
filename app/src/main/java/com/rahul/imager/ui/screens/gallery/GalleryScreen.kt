@@ -31,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +47,7 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rahul.imager.R
+import com.rahul.imager.ui.components.ImagerHeader
 import com.rahul.imager.ui.components.EmptyState
 import com.rahul.imager.ui.components.InlineNotice
 import com.rahul.imager.ui.components.LoadingSkeleton
@@ -91,21 +91,13 @@ fun GalleryScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-                title = { Text(stringResource(R.string.picker_title)) },
-            )
-        },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            ImagerHeader(
+                title = stringResource(R.string.picker_title),
+                onBack = onBack,
+            )
             when (state.access) {
                 MediaAccess.DENIED -> PermissionRationale(
                     onGrant = { permissionLauncher.launch(viewModel.requiredPermissions()) },

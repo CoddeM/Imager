@@ -22,34 +22,31 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -58,22 +55,26 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rahul.imager.R
 import com.rahul.imager.data.RecentPrint
 import com.rahul.imager.printer.raster.PrintOptions
-import com.rahul.imager.ui.components.EmptyState
-import com.rahul.imager.ui.components.InlineNotice
+import com.rahul.imager.ui.components.ImagerCard
+import com.rahul.imager.ui.components.ImagerHeader
+import com.rahul.imager.ui.components.IconTile
+import com.rahul.imager.ui.components.InlineBanner
 import com.rahul.imager.ui.components.PrinterPickerSheet
 import com.rahul.imager.ui.components.PrinterStatusChip
-import com.rahul.imager.ui.components.SectionHeader
+import com.rahul.imager.ui.components.ScreenGutter
+import com.rahul.imager.ui.components.SectionTitle
 import com.rahul.imager.ui.components.rememberCachedThumbnail
 import com.rahul.imager.ui.theme.ImagerTheme
+import com.rahul.imager.ui.theme.LocalStatusColors
 
 /**
  * The home screen: the shortest possible path from "I want to print this" to a preview.
  *
  * Photo selection is NEVER blocked on printer setup. A user with no printer can still pick a
  * photo, see exactly how it would print, and only then be asked where to send it — which is the
- * order that makes sense when you are trying an app for the first time.
+ * order that makes sense when you are trying an app for the first time. The layout says the same
+ * thing: the photo hero is the loudest element, and the printer lives in a quiet chip above it.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onPhotoPicked: (Uri) -> Unit,
@@ -92,69 +93,66 @@ fun HomeScreen(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri -> uri?.let(onPhotoPicked) }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    PrinterStatusChip(
-                        printer = uiState.defaultPrinter,
-                        state = uiState.defaultPrinterState,
-                        onClick = { showPrinterSheet = true },
-                        modifier = Modifier.padding(end = 8.dp),
-                    )
-                },
-            )
-        },
-    ) { innerPadding ->
+    val openPicker = {
+        pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        ImagerHeader(
+            title = stringResource(R.string.app_name),
+            subtitle = stringResource(R.string.home_subtitle),
+            actions = {
+                PrinterStatusChip(
+                    printer = uiState.defaultPrinter,
+                    state = uiState.defaultPrinterState,
+                    onClick = { showPrinterSheet = true },
+                )
+            },
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+                .padding(horizontal = ScreenGutter),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
 
             if (uiState.showNoPrinterBanner) {
-                NoPrinterBanner(
-                    onSetUp = onAddPrinter,
-                    onDismiss = viewModel::dismissBanner,
+                NoPrinterBanner(onSetUp = onAddPrinter, onDismiss = viewModel::dismissBanner)
+            }
+
+            ChoosePhotoHero(onClick = { openPicker() })
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                QuickAction(
+                    icon = Icons.Default.Collections,
+                    label = stringResource(R.string.home_browse_gallery),
+                    onClick = onBrowseGallery,
+                    modifier = Modifier.weight(1f),
+                )
+                QuickAction(
+                    icon = Icons.Default.Print,
+                    label = stringResource(R.string.action_add_printer),
+                    onClick = onAddPrinter,
+                    modifier = Modifier.weight(1f),
                 )
             }
 
-            ChoosePhotoCard(
-                onClick = {
-                    pickPhoto.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-            )
-
-            TextButton(
-                onClick = onBrowseGallery,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) {
-                Icon(Icons.Default.Collections, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.home_browse_gallery))
-            }
-
-            SectionHeader(text = stringResource(R.string.home_recent_prints))
+            SectionTitle(text = stringResource(R.string.home_recent_prints))
 
             if (uiState.recents.isEmpty()) {
-                EmptyState(
-                    icon = Icons.Default.History,
-                    title = stringResource(R.string.home_recent_prints),
-                    message = stringResource(R.string.home_recent_empty),
-                )
+                RecentsEmpty()
             } else {
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp),
+                    contentPadding = PaddingValues(vertical = 2.dp),
                 ) {
                     items(uiState.recents, key = { it.id }) { recent ->
                         RecentPrintCard(
@@ -189,37 +187,85 @@ fun HomeScreen(
     }
 }
 
-/** The hero action. Deliberately the largest, most obvious thing on the screen. */
+/**
+ * The hero action. Deliberately the largest, loudest thing on the screen.
+ *
+ * It is the only gradient in the app, which is what makes it impossible to miss on a page of white
+ * cards — and the reason nothing else on Home is allowed to compete with it.
+ */
 @Composable
-private fun ChoosePhotoCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Default.AddPhotoAlternate,
-                contentDescription = null,
-                modifier = Modifier.size(36.dp),
+private fun ChoosePhotoHero(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val status = LocalStatusColors.current
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(status.gradientStart, status.gradientEnd),
+                )
             )
+            .clickable(onClick = onClick),
+    ) {
+        Column(Modifier.padding(24.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(Color.White.copy(alpha = 0.20f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AddPhotoAlternate,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(25.dp),
+                )
+            }
+            Spacer(Modifier.height(18.dp))
             Text(
                 text = stringResource(R.string.home_choose_photo),
                 style = MaterialTheme.typography.headlineMedium,
+                color = Color.White,
             )
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = stringResource(R.string.home_choose_photo_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.85f),
             )
+            Spacer(Modifier.height(20.dp))
+            Surface(shape = CircleShape, color = Color.White) {
+                Text(
+                    text = stringResource(R.string.home_choose_photo_action),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = status.gradientEnd,
+                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp),
+                )
+            }
         }
+    }
+}
+
+/** One of the two shortcut tiles under the hero. */
+@Composable
+private fun QuickAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ImagerCard(modifier = modifier, onClick = onClick, contentPadding = PaddingValues(14.dp)) {
+        IconTile(icon = icon)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -230,20 +276,60 @@ private fun NoPrinterBanner(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        InlineNotice(
-            text = stringResource(R.string.home_no_printer_banner),
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.width(8.dp))
-        FilledTonalButton(onClick = onSetUp) {
-            Text(stringResource(R.string.home_no_printer_banner_action))
-        }
-        IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_dismiss))
+    val status = LocalStatusColors.current
+    InlineBanner(
+        text = stringResource(R.string.home_no_printer_banner),
+        icon = Icons.Default.Info,
+        color = status.warning,
+        tint = status.warningTint,
+        modifier = modifier,
+        action = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.home_no_printer_banner_action),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable(onClick = onSetUp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.action_dismiss),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onDismiss)
+                        .padding(6.dp),
+                )
+            }
+        },
+    )
+}
+
+/** Recents before anything has been printed. */
+@Composable
+private fun RecentsEmpty(modifier: Modifier = Modifier) {
+    ImagerCard(modifier = modifier.fillMaxWidth(), contentPadding = PaddingValues(28.dp)) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            IconTile(
+                icon = Icons.Default.History,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                background = MaterialTheme.colorScheme.surfaceContainer,
+                size = 52.dp,
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = stringResource(R.string.home_recent_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -258,16 +344,20 @@ private fun RecentPrintCard(
 ) {
     val thumbnail by rememberCachedThumbnail(recent.thumbnailPath)
     val description = stringResource(R.string.home_reprint_content_description)
+    val status = LocalStatusColors.current
 
-    Card(modifier = modifier.width(132.dp)) {
+    ImagerCard(
+        modifier = modifier.width(146.dp),
+        onClick = onClick,
+        contentPadding = PaddingValues(10.dp),
+    ) {
         Box {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(160.dp)
+                    .height(150.dp)
                     .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .clickable(onClick = onClick),
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentAlignment = Alignment.Center,
             ) {
                 thumbnail?.let {
@@ -279,50 +369,58 @@ private fun RecentPrintCard(
                     )
                 }
             }
-            IconButton(
-                onClick = onRemove,
-                modifier = Modifier.align(Alignment.TopEnd),
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .clickable(onClick = onRemove),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = stringResource(R.string.action_remove),
-                    modifier = Modifier.size(16.dp),
+                    tint = Color.White,
+                    modifier = Modifier.size(14.dp),
                 )
             }
         }
-        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-            Text(
-                text = recent.printerName,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = if (recent.success) {
-                    stringResource(R.string.printing_success)
-                } else {
-                    recent.errorCode ?: stringResource(R.string.printing_failed)
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = if (recent.success) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = recent.printerName,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            text = if (recent.success) {
+                stringResource(R.string.printing_success)
+            } else {
+                recent.errorCode ?: stringResource(R.string.printing_failed)
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = if (recent.success) status.connected else status.error,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
 @Preview(name = "Home phone", widthDp = 360, heightDp = 780, showBackground = true)
-@Preview(name = "Home small", widthDp = 320, heightDp = 640, showBackground = true)
 @Composable
-private fun ChoosePhotoCardPreview() {
+private fun HomePiecesPreview() {
     ImagerTheme {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ChoosePhotoCard(onClick = {})
+        Column(
+            Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            ChoosePhotoHero(onClick = {})
             NoPrinterBanner(onSetUp = {}, onDismiss = {})
             RecentPrintCard(
                 recent = RecentPrint(

@@ -28,7 +28,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,7 +61,11 @@ fun PrinterPickerSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -76,11 +83,11 @@ fun PrinterPickerSheet(
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = onAddPrinter) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.action_add_printer))
-                }
+                TonalButton(
+                    text = stringResource(R.string.action_add_printer),
+                    icon = Icons.Default.Add,
+                    onClick = onAddPrinter,
+                )
             }
 
             if (printers.isEmpty()) {
@@ -89,9 +96,11 @@ fun PrinterPickerSheet(
                     title = stringResource(R.string.printers_empty_title),
                     message = stringResource(R.string.printers_empty_message),
                     action = {
-                        TextButton(onClick = onAddPrinter) {
-                            Text(stringResource(R.string.action_add_printer))
-                        }
+                        TonalButton(
+                            text = stringResource(R.string.action_add_printer),
+                            icon = Icons.Default.Add,
+                            onClick = onAddPrinter,
+                        )
                     },
                 )
             } else {
@@ -124,30 +133,41 @@ private fun PrinterSheetRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 3.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(
+                if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    Color.Transparent
+                }
+            )
             .clickable(onClick = onSelect)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        StateDot(state)
+        IconTile(
+            icon = Icons.Default.Print,
+            size = 42.dp,
+            background = if (selected) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.primaryContainer
+            },
+        )
 
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = printer.displayName,
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (selected) {
-                    Spacer(Modifier.width(6.dp))
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = stringResource(R.string.printers_default_badge),
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
+                Spacer(Modifier.width(8.dp))
+                StateDot(state)
             }
             Text(
                 text = buildString {
@@ -161,7 +181,7 @@ private fun PrinterSheetRow(
                     append("  ·  ")
                     append(paper.label)
                 },
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

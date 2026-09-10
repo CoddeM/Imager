@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,11 +23,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Wifi
@@ -44,12 +47,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,6 +62,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rahul.imager.R
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import com.rahul.imager.ui.components.IconTile
+import com.rahul.imager.ui.components.ImagerCard
+import com.rahul.imager.ui.components.ImagerHeader
+import com.rahul.imager.ui.components.MetaChip
+import com.rahul.imager.ui.components.RowDivider
+import com.rahul.imager.ui.components.ScreenGutter
+import com.rahul.imager.ui.components.SectionTitle
+import com.rahul.imager.ui.components.SettingGroup
+import com.rahul.imager.ui.components.StatusPill
+import com.rahul.imager.ui.theme.LocalStatusColors
 import com.rahul.imager.printer.discovery.DiscoveredPrinter
 import com.rahul.imager.printer.domain.PaperProfiles
 import com.rahul.imager.printer.domain.PrinterStatus
@@ -105,24 +119,19 @@ fun AddPrinterScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = { if (!viewModel.back()) onBack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-                title = { Text(stringResource(R.string.add_title)) },
-            )
-        },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
+        // The header lives inside the content rather than in the topBar slot so that it picks up
+        // the Scaffold's status bar inset like everything else does.
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            LinearProgressIndicator(
-                progress = { (state.step.ordinal + 1) / AddStep.entries.size.toFloat() },
-                modifier = Modifier.fillMaxWidth(),
+            ImagerHeader(
+                title = stringResource(R.string.add_title),
+                onBack = { if (!viewModel.back()) onBack() },
+            )
+            StepProgress(
+                current = state.step.ordinal,
+                total = AddStep.entries.size,
+                modifier = Modifier.padding(horizontal = ScreenGutter),
             )
 
             AnimatedContent(targetState = state.step, label = "addStep") { step ->
@@ -214,9 +223,14 @@ private fun ConnectionStep(
             )
         }
 
-        SoftDivider()
-        SectionHeader(stringResource(R.string.diagnostics_families))
-        state.families.forEach { family -> FamilyRow(family) }
+        Spacer(Modifier.height(8.dp))
+        SectionTitle(stringResource(R.string.diagnostics_families))
+        SettingGroup {
+            state.families.forEachIndexed { index, family ->
+                if (index > 0) RowDivider(inset = 62.dp)
+                FamilyRow(family)
+            }
+        }
     }
 }
 
@@ -227,23 +241,68 @@ private fun ConnectionCard(
     description: String,
     onClick: () -> Unit,
 ) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    ImagerCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        contentPadding = PaddingValues(14.dp),
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp))
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(title, style = MaterialTheme.typography.titleMedium)
+            IconTile(icon = icon, size = 46.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The four-step tracker across the top of the add flow.
+ *
+ * A segmented bar rather than a continuous one: the user is being walked through a fixed number of
+ * steps, and being able to count the remaining segments is the whole point.
+ */
+@Composable
+private fun StepProgress(current: Int, total: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        repeat(total) { index ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(5.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (index <= current) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        }
+                    ),
+            )
         }
     }
 }
@@ -251,36 +310,57 @@ private fun ConnectionCard(
 /** One driver family, greyed out with a reason when it is unavailable. */
 @Composable
 private fun FamilyRow(family: FamilyAvailability) {
+    val statusColors = LocalStatusColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(horizontal = 14.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        IconTile(
+            icon = Icons.Default.Print,
+            size = 36.dp,
+            tint = if (family.available) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            background = if (family.available) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            },
+        )
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = family.brand.name.lowercase().replaceFirstChar(Char::uppercase),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleSmall,
                 color = if (family.available) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
             )
-            val note = family.reason
-                ?: family.supportedTransports.joinToString { it.name.lowercase() }
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = note,
-                style = MaterialTheme.typography.labelSmall,
+                text = family.reason
+                    ?: family.supportedTransports.joinToString { it.name.lowercase() },
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
+        Spacer(Modifier.width(10.dp))
         if (family.available) {
-            Text(
+            StatusPill(
                 text = stringResource(R.string.diagnostics_family_available),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = statusColors.connected,
+                tint = statusColors.connectedTint,
             )
+        } else {
+            MetaChip(text = stringResource(R.string.add_family_unavailable_badge))
         }
     }
 }
@@ -373,25 +453,30 @@ private fun DiscoveredRow(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = if (selected) {
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
+    ImagerCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        color = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
         } else {
-            CardDefaults.cardColors()
+            MaterialTheme.colorScheme.surface
         },
+        contentPadding = PaddingValues(14.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            IconTile(
+                icon = Icons.Default.Print,
+                size = 42.dp,
+                background = if (selected) {
+                    MaterialTheme.colorScheme.surface
+                } else {
+                    MaterialTheme.colorScheme.primaryContainer
+                },
+            )
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = discovered.name,

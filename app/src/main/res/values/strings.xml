@@ -34,6 +34,8 @@
 
     <!-- ===================== Home ===================== -->
     <string name="home_title">Home</string>
+    <string name="home_subtitle">Turn any photo into a receipt print</string>
+    <string name="home_choose_photo_action">Open gallery</string>
     <string name="home_choose_photo">Choose a photo</string>
     <string name="home_choose_photo_subtitle">Pick any picture from your gallery and print it on receipt paper.</string>
     <string name="home_browse_gallery">Browse in the app</string>
@@ -189,6 +191,7 @@
     <string name="add_manual_add">Add</string>
     <string name="add_bonded_devices">Paired devices</string>
     <string name="add_family_unavailable">SDK not bundled in this build</string>
+    <string name="add_family_unavailable_badge">Not bundled</string>
     <string name="add_identify_name">Name</string>
     <string name="add_identify_model">Model</string>
     <string name="add_identify_paper">Paper</string>
@@ -222,6 +225,7 @@
     <string name="settings_keep_recents">Keep recent prints</string>
     <string name="settings_keep_recents_summary">Remember the last 20 photos you printed.</string>
     <string name="settings_clear_cache">Clear cached thumbnails</string>
+    <string name="settings_preferences">Preferences</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_version_hint">Long press for diagnostics</string>

@@ -171,7 +171,8 @@ fun PaperCanvas(
 }
 
 /** The desk the paper sits on. Deliberately neutral so it never tints the preview. */
-private val PaperBackdrop = Color(0xFF6E6A65)
+/** A cool, near-neutral backdrop so the white paper reads as paper and nothing competes. */
+private val PaperBackdrop = Color(0xFF394052)
 
 private const val PAPER_WIDTH_FRACTION = 0.72f
 private const val MIN_ZOOM = 1f

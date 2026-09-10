@@ -5,16 +5,20 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -23,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -73,13 +78,20 @@ fun ImagerApp(
 
     Row(modifier = modifier.fillMaxSize()) {
         if (showNavigation && useRail) {
-            NavigationRail {
+            NavigationRail(containerColor = MaterialTheme.colorScheme.surface) {
                 TopLevelDestination.entries.forEach { destination ->
                     NavigationRailItem(
                         selected = currentDestination.isTopLevel(destination),
                         onClick = { navController.navigateTopLevel(destination) },
                         icon = { Icon(destination.icon, contentDescription = null) },
                         label = { Text(stringResource(destination.labelRes)) },
+                        colors = NavigationRailItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                     )
                 }
             }
@@ -87,20 +99,39 @@ fun ImagerApp(
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            // The three top-level screens each carry their own Scaffold and TopAppBar, which apply
-            // the status bar inset themselves. Handing it to them a second time here is what put
-            // an empty system-bar-tall strip above every top app bar.
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            containerColor = MaterialTheme.colorScheme.background,
+            // The system bar insets are applied exactly once, here. The top-level screens are plain
+            // columns with an ImagerHeader rather than Scaffolds of their own, so nothing
+            // downstream applies them a second time — which is what used to leave an empty
+            // status-bar-tall strip above every header.
             bottomBar = {
                 if (showNavigation && !useRail) {
-                    NavigationBar {
-                        TopLevelDestination.entries.forEach { destination ->
-                            NavigationBarItem(
-                                selected = currentDestination.isTopLevel(destination),
-                                onClick = { navController.navigateTopLevel(destination) },
-                                icon = { Icon(destination.icon, contentDescription = null) },
-                                label = { Text(stringResource(destination.labelRes)) },
-                            )
+                    Column {
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
+                        NavigationBar(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 0.dp,
+                        ) {
+                            TopLevelDestination.entries.forEach { destination ->
+                                NavigationBarItem(
+                                    selected = currentDestination.isTopLevel(destination),
+                                    onClick = { navController.navigateTopLevel(destination) },
+                                    icon = { Icon(destination.icon, contentDescription = null) },
+                                    label = { Text(stringResource(destination.labelRes)) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                        unselectedIconColor =
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor =
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                    ),
+                                )
+                            }
                         }
                     }
                 }

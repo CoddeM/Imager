@@ -1,5 +1,7 @@
 package com.rahul.imager.ui.screens.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,19 +11,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,10 +45,16 @@ import com.rahul.imager.data.ThemeMode
 import com.rahul.imager.printer.domain.SavedPrinter
 import com.rahul.imager.printer.raster.PrintOptions
 import com.rahul.imager.printer.raster.PrintPreset
-import com.rahul.imager.ui.components.SectionHeader
+import com.rahul.imager.ui.components.IconTile
+import com.rahul.imager.ui.components.ImagerCard
+import com.rahul.imager.ui.components.ImagerHeader
+import com.rahul.imager.ui.components.RowDivider
+import com.rahul.imager.ui.components.ScreenGutter
+import com.rahul.imager.ui.components.SectionTitle
 import com.rahul.imager.ui.components.SegmentedOption
 import com.rahul.imager.ui.components.SegmentedOptionRow
-import com.rahul.imager.ui.components.SoftDivider
+import com.rahul.imager.ui.components.SettingGroup
+import com.rahul.imager.ui.components.SettingRow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -113,10 +125,11 @@ class SettingsViewModel @Inject constructor(
 /**
  * Settings.
  *
- * The version row is also the way into the diagnostics screen: a long press. Hidden rather than
+ * Grouped cards rather than one long list: the four things this screen controls have nothing to do
+ * with each other, and a card apiece is what stops them reading as an undifferentiated column of
+ * switches. The version row is also the way into diagnostics, on a long press — hidden rather than
  * absent, because print traces are for the rare bad day, not for the everyday UI.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onOpenDiagnostics: () -> Unit,
@@ -125,106 +138,132 @@ fun SettingsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
-        modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title)) }) },
-    ) { innerPadding ->
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        ImagerHeader(title = stringResource(R.string.settings_title))
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = ScreenGutter),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SectionHeader(stringResource(R.string.settings_default_printer))
-            if (state.printers.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.printers_empty_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                SegmentedOptionRow(
-                    options = state.printers.map { SegmentedOption(it.id, it.displayName) },
-                    selected = state.defaultPrinter?.id ?: "",
-                    onSelect = { id ->
-                        state.printers.firstOrNull { it.id == id }
-                            ?.let(viewModel::setDefaultPrinter)
-                    },
-                )
-            }
-
-            SoftDivider()
-
-            SectionHeader(stringResource(R.string.settings_theme))
-            SegmentedOptionRow(
-                options = listOf(
-                    SegmentedOption(ThemeMode.SYSTEM, stringResource(R.string.settings_theme_system)),
-                    SegmentedOption(ThemeMode.LIGHT, stringResource(R.string.settings_theme_light)),
-                    SegmentedOption(ThemeMode.DARK, stringResource(R.string.settings_theme_dark)),
-                ),
-                selected = state.settings.themeMode,
-                onSelect = viewModel::setThemeMode,
-            )
-
-            SoftDivider()
-
-            SectionHeader(stringResource(R.string.settings_default_options))
-            Text(
-                text = stringResource(R.string.settings_default_options_summary),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TextButton(onClick = viewModel::resetDefaultOptions) {
-                Text(stringResource(R.string.action_reset))
-            }
-
-            SoftDivider()
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
+            Spacer(Modifier.height(2.dp))
+            SectionTitle(stringResource(R.string.settings_default_printer))
+            ImagerCard {
+                if (state.printers.isEmpty()) {
                     Text(
-                        text = stringResource(R.string.settings_keep_recents),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_keep_recents_summary),
+                        text = stringResource(R.string.printers_empty_message),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                }
-                Switch(
-                    checked = state.settings.keepRecents,
-                    onCheckedChange = viewModel::setKeepRecents,
-                )
-            }
-
-            TextButton(onClick = viewModel::clearCache) {
-                Text(stringResource(R.string.settings_clear_cache))
-            }
-
-            SoftDivider()
-
-            SectionHeader(stringResource(R.string.settings_about))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = { },
-                        onLongClick = onOpenDiagnostics,
+                } else {
+                    SegmentedOptionRow(
+                        options = state.printers.map { SegmentedOption(it.id, it.displayName) },
+                        selected = state.defaultPrinter?.id ?: "",
+                        onSelect = { id ->
+                            state.printers.firstOrNull { it.id == id }
+                                ?.let(viewModel::setDefaultPrinter)
+                        },
                     )
-                    .padding(vertical = 8.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
-                    style = MaterialTheme.typography.bodyLarge,
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            SectionTitle(stringResource(R.string.settings_theme))
+            ImagerCard {
+                SegmentedOptionRow(
+                    options = listOf(
+                        SegmentedOption(
+                            ThemeMode.SYSTEM,
+                            stringResource(R.string.settings_theme_system),
+                        ),
+                        SegmentedOption(
+                            ThemeMode.LIGHT,
+                            stringResource(R.string.settings_theme_light),
+                        ),
+                        SegmentedOption(
+                            ThemeMode.DARK,
+                            stringResource(R.string.settings_theme_dark),
+                        ),
+                    ),
+                    selected = state.settings.themeMode,
+                    onSelect = viewModel::setThemeMode,
                 )
-                Text(
-                    text = stringResource(R.string.settings_version_hint),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            }
+
+            Spacer(Modifier.height(4.dp))
+            SectionTitle(stringResource(R.string.settings_preferences))
+            SettingGroup {
+                SettingRow(
+                    icon = Icons.Default.Tune,
+                    title = stringResource(R.string.settings_default_options),
+                    subtitle = stringResource(R.string.settings_default_options_summary),
+                    trailing = {
+                        Text(
+                            text = stringResource(R.string.action_reset),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable(onClick = viewModel::resetDefaultOptions)
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                        )
+                    },
                 )
+                RowDivider()
+                SettingRow(
+                    icon = Icons.Default.History,
+                    title = stringResource(R.string.settings_keep_recents),
+                    subtitle = stringResource(R.string.settings_keep_recents_summary),
+                    trailing = {
+                        Switch(
+                            checked = state.settings.keepRecents,
+                            onCheckedChange = viewModel::setKeepRecents,
+                        )
+                    },
+                )
+                RowDivider()
+                SettingRow(
+                    icon = Icons.Default.DeleteSweep,
+                    title = stringResource(R.string.settings_clear_cache),
+                    onClick = viewModel::clearCache,
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
+            SectionTitle(stringResource(R.string.settings_about))
+            SettingGroup {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(onClick = { }, onLongClick = onOpenDiagnostics)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconTile(icon = Icons.Default.Info)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(
+                                R.string.settings_version,
+                                BuildConfig.VERSION_NAME,
+                            ),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.settings_version_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(32.dp))

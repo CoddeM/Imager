@@ -1,5 +1,6 @@
 package com.rahul.imager.ui.screens.printers
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,31 +9,28 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,20 +38,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rahul.imager.R
+import com.rahul.imager.data.ConnectionState
 import com.rahul.imager.printer.domain.PaperProfile
 import com.rahul.imager.printer.domain.PaperProfiles
 import com.rahul.imager.printer.domain.SavedPrinter
 import com.rahul.imager.ui.components.ErrorPanel
 import com.rahul.imager.ui.components.EmptyState
+import com.rahul.imager.ui.components.IconTile
+import com.rahul.imager.ui.components.ImagerCard
+import com.rahul.imager.ui.components.ImagerHeader
+import com.rahul.imager.ui.components.MetaChip
+import com.rahul.imager.ui.components.ScreenGutter
 import com.rahul.imager.ui.components.SegmentedOption
 import com.rahul.imager.ui.components.SegmentedOptionRow
-import com.rahul.imager.ui.components.StateDot
+import com.rahul.imager.ui.components.StatusPill
+import com.rahul.imager.ui.components.TonalButton
+import com.rahul.imager.ui.components.connectionStateTint
+import com.rahul.imager.ui.theme.LocalStatusColors
 import com.rahul.imager.ui.components.connectionStateLabel
 
 /**
@@ -62,7 +71,6 @@ import com.rahul.imager.ui.components.connectionStateLabel
  * Reachable at any time and completely independent of the photo flow: printers are a persistent
  * app-level resource, not a step in a wizard.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrintersScreen(
     onAddPrinter: () -> Unit,
@@ -74,34 +82,33 @@ fun PrintersScreen(
     var forgetting by remember { mutableStateOf<SavedPrinter?>(null) }
     var changingPaper by remember { mutableStateOf<PrinterRow?>(null) }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.printers_title)) }) },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddPrinter,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.action_add_printer)) },
-            )
-        },
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            ImagerHeader(title = stringResource(R.string.printers_title))
+
             if (state.rows.isEmpty()) {
-                EmptyState(
-                    icon = Icons.Default.Print,
-                    title = stringResource(R.string.printers_empty_title),
-                    message = stringResource(R.string.printers_empty_message),
-                    action = {
-                        TextButton(onClick = onAddPrinter) {
-                            Text(stringResource(R.string.action_add_printer))
-                        }
-                    },
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(
+                        icon = Icons.Default.Print,
+                        title = stringResource(R.string.printers_empty_title),
+                        message = stringResource(R.string.printers_empty_message),
+                        action = {
+                            TonalButton(
+                                text = stringResource(R.string.action_add_printer),
+                                icon = Icons.Default.Add,
+                                onClick = onAddPrinter,
+                            )
+                        },
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp),
+                    contentPadding = PaddingValues(ScreenGutter, 4.dp, ScreenGutter, 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(state.rows, key = { it.printer.id }) { row ->
@@ -119,6 +126,21 @@ fun PrintersScreen(
                     }
                 }
             }
+        }
+
+        // Floating rather than a header action: adding a printer is the one thing this screen
+        // exists to make easy, and it stays in thumb reach however far the list is scrolled.
+        if (state.rows.isNotEmpty()) {
+            ExtendedFloatingActionButton(
+                onClick = onAddPrinter,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(ScreenGutter),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.action_add_printer)) },
+            )
         }
     }
 
@@ -197,36 +219,38 @@ private fun PrinterCard(
     var menuOpen by remember { mutableStateOf(false) }
     val isTesting = (testPrint as? TestPrintState.Running)?.printerId == row.printer.id
 
-    Card(modifier = modifier.fillMaxWidth()) {
+    val statusColors = LocalStatusColors.current
+    val stateColor = when (row.state) {
+        is ConnectionState.Connected -> statusColors.connected
+        ConnectionState.Connecting -> statusColors.warning
+        is ConnectionState.Failed -> statusColors.error
+        ConnectionState.Disconnected -> statusColors.idle
+    }
+
+    ImagerCard(modifier = modifier.fillMaxWidth(), contentPadding = PaddingValues(14.dp)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.Top,
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            IconTile(icon = Icons.Default.Print, size = 46.dp)
+            Spacer(Modifier.width(14.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    StateDot(row.state)
-                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = row.printer.displayName,
                         style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                     if (row.printer.isDefault) {
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = stringResource(R.string.printers_default_badge),
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
+                        Spacer(Modifier.width(8.dp))
+                        DefaultBadge()
                     }
                 }
-
-                Spacer(Modifier.width(4.dp))
-
+                Spacer(Modifier.height(3.dp))
                 Text(
                     text = buildString {
                         append(row.printer.brand.name.lowercase().replaceFirstChar(Char::uppercase))
@@ -242,17 +266,10 @@ private fun PrinterCard(
                             }
                         }
                     },
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = buildString {
-                        append(connectionStateLabel(row.state))
-                        append("  ·  ")
-                        append(stringResource(R.string.printers_paper_label, row.paper.label))
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -300,7 +317,37 @@ private fun PrinterCard(
                 }
             }
         }
+
+        Spacer(Modifier.height(12.dp))
+
+        // State and paper as pills rather than another line of grey text: these are the two things
+        // a user scans this list for, and they have to survive a glance.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            StatusPill(
+                text = connectionStateLabel(row.state),
+                color = stateColor,
+                tint = connectionStateTint(row.state),
+            )
+            MetaChip(text = stringResource(R.string.printers_paper_label, row.paper.label))
+        }
     }
+}
+
+/** The "Default" marker on the printer that photos are sent to unless told otherwise. */
+@Composable
+private fun DefaultBadge(modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(R.string.printers_default_badge),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = 9.dp, vertical = 4.dp),
+    )
 }
 
 @Composable

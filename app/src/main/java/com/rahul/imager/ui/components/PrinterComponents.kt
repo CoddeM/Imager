@@ -2,6 +2,7 @@ package com.rahul.imager.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,12 +19,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -61,7 +59,7 @@ fun StateDot(state: ConnectionState, modifier: Modifier = Modifier) {
     val color by animateColorAsState(target, tween(200), label = "stateDot")
     Box(
         modifier = modifier
-            .size(8.dp)
+            .size(9.dp)
             .clip(CircleShape)
             .background(color),
     )
@@ -76,8 +74,20 @@ fun connectionStateLabel(state: ConnectionState): String = when (state) {
     ConnectionState.Disconnected -> stringResource(R.string.printer_state_disconnected)
 }
 
+/** The wash behind a status, matched to [StateDot]'s colour. */
+@Composable
+fun connectionStateTint(state: ConnectionState): Color {
+    val statusColors = LocalStatusColors.current
+    return when (state) {
+        is ConnectionState.Connected -> statusColors.connectedTint
+        ConnectionState.Connecting -> statusColors.warningTint
+        is ConnectionState.Failed -> statusColors.errorTint
+        ConnectionState.Disconnected -> MaterialTheme.colorScheme.surfaceContainer
+    }
+}
+
 /**
- * The printer chip in the top bar.
+ * The printer chip in the header.
  *
  * It appears identically on Home and on Preview and always does the same thing, which is what lets
  * the user switch printers from inside the photo flow without ever leaving it.
@@ -90,29 +100,38 @@ fun PrinterStatusChip(
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.printer_chip_content_description)
-    AssistChip(
+    Surface(
         onClick = onClick,
         modifier = modifier.semantics { contentDescription = description },
-        leadingIcon = {
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             if (printer == null) {
                 Icon(
                     imageVector = Icons.Default.Print,
                     contentDescription = null,
-                    modifier = Modifier.size(AssistChipDefaults.IconSize),
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 StateDot(state)
             }
-        },
-        label = {
+            Spacer(Modifier.width(8.dp))
             Text(
                 text = printer?.displayName ?: stringResource(R.string.printer_chip_none),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 160.dp),
+                modifier = Modifier.widthIn(max = 150.dp),
             )
-        },
-    )
+        }
+    }
 }
 
 /**
@@ -128,37 +147,40 @@ fun ErrorPanel(
     actions: (@Composable () -> Unit)? = null,
 ) {
     val presentation = PrintErrorCatalog.presentationFor(error.category)
-    Card(
+    val statusColors = LocalStatusColors.current
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        ),
+        shape = MaterialTheme.shapes.medium,
+        color = statusColors.errorTint,
+        border = BorderStroke(1.dp, statusColors.error.copy(alpha = 0.22f)),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                IconTile(
+                    icon = Icons.Default.Warning,
+                    tint = statusColors.error,
+                    background = statusColors.error.copy(alpha = 0.14f),
+                    size = 38.dp,
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(12.dp))
                 Text(
                     text = stringResource(presentation.titleRes),
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Text(
                 text = stringResource(presentation.messageRes),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(presentation.actionRes),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             CodeText(
                 code = buildString {
@@ -167,8 +189,8 @@ fun ErrorPanel(
                 },
             )
             actions?.let {
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { it() }
+                Spacer(Modifier.height(2.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { it() }
             }
         }
     }
@@ -179,15 +201,15 @@ fun ErrorPanel(
 fun InlineNotice(
     text: String,
     modifier: Modifier = Modifier,
-    container: Color = MaterialTheme.colorScheme.secondaryContainer,
-    content: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+    container: Color = MaterialTheme.colorScheme.surfaceContainer,
+    content: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
             .background(container)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

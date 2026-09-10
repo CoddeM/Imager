@@ -13,7 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -35,7 +38,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -55,6 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rahul.imager.R
+import com.rahul.imager.ui.components.ImagerHeader
+import com.rahul.imager.ui.components.PrimaryButton
+import com.rahul.imager.ui.components.SecondaryButton
 import com.rahul.imager.printer.engine.PrintProgress
 import com.rahul.imager.printer.engine.PrintTraceRecorder
 import com.rahul.imager.printer.raster.RasterWarning
@@ -94,42 +99,27 @@ fun PreviewScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
+            ImagerHeader(
+                modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
+                title = stringResource(R.string.preview_title),
+                subtitle = if (state.outputWidthDots > 0) {
+                    stringResource(
+                        R.string.preview_output_size,
+                        state.outputWidthDots,
+                        state.outputHeightDots,
+                        state.outputLengthMm,
+                    )
+                } else {
+                    null
                 },
-                title = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.preview_title),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                        if (state.outputWidthDots > 0) {
-                            Text(
-                                text = stringResource(
-                                    R.string.preview_output_size,
-                                    state.outputWidthDots,
-                                    state.outputHeightDots,
-                                    state.outputLengthMm,
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                },
+                onBack = onBack,
                 actions = {
                     PrinterStatusChip(
                         printer = state.selectedPrinter,
                         state = state.printerState,
                         onClick = { showPrinterSheet = true },
-                        modifier = Modifier.padding(end = 8.dp),
                     )
                 },
             )
@@ -354,21 +344,20 @@ private fun PrintBar(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (showOptionsButton) {
-                OutlinedButton(onClick = onOptions) {
-                    Icon(Icons.Default.Tune, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.tab_size))
-                }
+                SecondaryButton(
+                    text = stringResource(R.string.tab_size),
+                    icon = Icons.Default.Tune,
+                    onClick = onOptions,
+                    modifier = Modifier.weight(1f),
+                )
             }
-            Button(
+            PrimaryButton(
+                text = stringResource(R.string.action_print),
+                icon = Icons.Default.Print,
                 onClick = onPrint,
                 enabled = blocked == null,
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Default.Print, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.action_print))
-            }
+                modifier = Modifier.weight(if (showOptionsButton) 1.6f else 1f),
+            )
         }
     }
 }
